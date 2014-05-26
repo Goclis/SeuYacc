@@ -144,40 +144,49 @@ def generate_items():
 # @symbols : list<Symbol> 符号串
 # @return : list<Symbol> first集合
 def first_beta_a(symbols):
-	pass
+	result = []
+
+	for i in range(len(symbols)):
+		current_symbol = symbols[i]
+
+		if current_symbol.s_type == 0:
+			return ['epsilon']
+		elif current_symbol.s_type == 1:
+			# check 0 ~ i-1
+			for j in range(i):
+				if 'epsilon' not in first(symbols[i]):
+					return result
+			result.append(current_symbol)
+			return result
+		else:
+			# check 0 ~ i-1
+			for j in range(j):
+				if 'epsilon' not in first(symbols[i]):
+					return result
+			result.extend(first(current_symbol))
+
+	return result
 
 # 求单个符号的first集合
+# 对存在左递归的非终结符，不允许其存在epsilon，即不能有A->Ac | e (e为epsilon)
 # @symbol : Symbol 单个符号
 # @reutn : list<Symbol> first集合
+# TODO：添加对所有非终结符的first集合的临时缓存，若存在直接使用
 def first(symbol):
-	pass
+	global productions
 
-# e = 'epsilon'
+	result = []
+	# 遍历产生式
+	for production in productions:
+		if production['left'] == symbol:
+			right_list = production['right']
 
-# #@x : 串
-# def first_beta_a(x):
-# 	global e
+			if right_list[0] == symbol:  # 直接左递归，直接忽略
+				pass
+			else:
+				result.extend(first_beta_a(right_list))
 
-# 	result = []
-# 	for i in range(len(x)):
-# 		current = x[i]
-
-# 		if current is 'terminal':
-# 			# check 0 ~ i-1
-# 			for j in range(i):
-# 				if e not in first(x[j]):
-# 					return result
-# 			result.append(current)
-# 			return result
-# 		elif current is e:
-# 			return [e]
-# 		else:
-# 			for j in range(i):
-# 				if e not in first(x[j]):
-# 					return result
-# 			result.extend(first(current))
-
-# 	return result
+	return result
 
 
 # # for single nonterminal
