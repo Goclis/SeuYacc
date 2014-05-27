@@ -66,6 +66,7 @@ symbols = []  # 所有的文法符号
 items = []  # 所有的状态机
 goto_table = {}
 action = {}
+priority = {}
 
 # 求item的闭包（扩展item）
 # @item : Item
@@ -248,7 +249,59 @@ def generate_parsing_table():
 						else:
 							action[item_id][symbol_after_dot.value] = 's' + str(next_item_id)  # 移入
 			
+# 解决action中的移入规约冲突
+def fix_conflict():
+	global action, items, productions, priority
 
+	result = []
+	# 找到有冲突的状态
+	for k, v in action.items():
+		for k1, v1 in v.items():
+			if v1.__class__ != ''.__class__:  # 不是字符串，说明有冲突
+				result.append((k, k1, v1))
+
+	# 解决冲突。。
+	for conflict in result:
+		conflict_item = items[conflict[0]]
+		conflict_symbol_value = conflict[1]
+		conflict_actions = conflict[2]
+
+		# 这里假设只会有两个冲突。。
+		for a in conflict_actions:
+			r_pos = a.find('r')
+			if r_pos != -1:
+				conflict_pid = a[r_pos + 1: ]
+			else:
+				conflict_target_item = a[a.find('s') + 1: ]
+
+		production = productions[int(conflict_pid)]
+		# 从后往前找产生式体中的终结符（因为只有它有优先级）
+		right = production.right
+		index = len(right) - 1
+		while index >= 0:
+			current_symbol = right[index]
+			if current_symbol.type == 1:
+				symbol_in_production = current_symbol
+				break
+			index -= 1
+
+		# 根据两个符号的优先级和结合来消除冲突
+		inside_symbol_property = priority[symbol_in_production.value]  # 在产生式体中的符号的优先级属性
+		outside_symbol_property = priority[conflict_symbol_value]  # 新遇到的符号的优先级属性
+		
+		if inside_symbol_property[0] == 0:  # 左结合
+			if outside_symbol_property[0] == 0:  # 也是左结合
+				# 比较优先级
+				if outside_symbol_property[1] >= inside_symbol_property[1]:
+					# 选择移入
+					action[conflict_item.item_id][conflict_symbol_value] = 's' + conflict_target_item
+				else:
+					# 规约
+					action[conflict_item.item_id][conflict_symbol_value] = 'r' + conflict_pid
+			else:
+				pass  # 先不考虑右结合。。
+		else:
+			pass  # 先不考虑右结合。。
 
 # 求一个符号串的first集合
 # @symbols : list<Symbol> 符号串
@@ -321,7 +374,6 @@ def is_item_exist(item):
 
 	return False
 
-
 def print_item(item):
 	lines = item.item_lines
 	lines.sort()
@@ -330,7 +382,7 @@ def print_item(item):
 		print p.left.value, [j.value for j in p.right], l.dot_pos, l.lookahead.value
 
 def test():
-	global productions, symbols, items, goto_table, action
+	global productions, symbols, items, goto_table, action, priority
 
 	# nt_Sp = Symbol("S'", 2)
 	# nt_S = Symbol('S', 2)
@@ -357,8 +409,8 @@ def test():
 	nt_E = Symbol('E', 2)
 	t_plus = Symbol('+', 1)
 	t_mul = Symbol('*', 1)
-	t_left = Symbol('(', 1)
-	t_right = Symbol(')', 1)
+	# t_left = Symbol('(', 1)
+	# t_right = Symbol(')', 1)
 	t_id = Symbol('i', 1)
 
 	symbols = [
@@ -366,8 +418,8 @@ def test():
 		nt_E,
 		t_plus,
 		t_mul,
-		t_left,
-		t_right,
+		# t_left,
+		# t_right,
 		t_id
 	]
 
@@ -375,9 +427,14 @@ def test():
 		Production(0, nt_Ep, [nt_E]),
 		Production(1, nt_E, [nt_E, t_plus, nt_E]),
 		Production(2, nt_E, [nt_E, t_mul, nt_E]),
-		Production(3, nt_E, [t_left, nt_E, t_right]),
-		Production(4, nt_E, [t_id])
+		# Production(3, nt_E, [t_left, nt_E, t_right]),
+		Production(3, nt_E, [t_id])
 	]
+
+	priority = {
+		t_plus.value: [0, 1],  # 0表示左结合，1表示优先级，越大优先级越高
+		t_mul.value: [0, 2]
+	}
 
 	generate_items()
 
@@ -385,6 +442,11 @@ def test():
 
 	generate_parsing_table()
 	print goto_table, '\n'
-	print action
+	print action, '\n'
+	print priority, '\n'
+
+	fix_conflict()
+
+	print action, '\n'
 
 test()
