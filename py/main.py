@@ -206,15 +206,47 @@ def generate_parsing_table():
 					action[item_id]['$'] = 'acc'
 					break  # 针对这个item没必要继续了
 				else:
-					action[item_id][l.lookahead.value] = 'r' + str(l.pid)  # 规约
+					# TODO：解决移入规约冲突
+					before_action = action[item_id].get(l.lookahead.value, '')
+					current_action = 'r' + str(l.pid)
+					if before_action:
+						# 已经存在了
+						if before_action == current_action:  # 相同
+							pass
+						else:
+							if before_action.__class__ == ''.__class__: # 字符串
+								action[item_id][l.lookahead.value] = [
+									before_action, current_action
+								]
+							else:
+								if current_action not in before_action:
+									before_action.append(current_action)
+									action[item_id][l.lookahead.value] = before_action
+					else:
+						action[item_id][l.lookahead.value] = current_action  # 规约
 			elif symbol_after_dot.type == 1:  # terminal
 				current_item_goto = goto_table.get(item_id, '')
 				if current_item_goto:
 					next_item_id = current_item_goto.get(symbol_after_dot.value, '')
 					if next_item_id:
-						print 'action[%s][%s] = s%s' % (item_id, symbol_after_dot.value, next_item_id)
-
-						action[item_id][symbol_after_dot.value] = 's' + str(next_item_id)  # 移入
+						# 收集移入规约冲突
+						before_action = action[item_id].get(symbol_after_dot.value, '')
+						current_action = 's' + str(next_item_id)
+						if before_action:
+							# 已经存在了
+							if before_action == current_action:  # 相同
+								pass
+							else:
+								if before_action.__class__ == ''.__class__: # 字符串
+									action[item_id][symbol_after_dot.value] = [
+										before_action, current_action
+									]
+								else:
+									if current_action not in before_action:
+										before_action.append(current_action)
+										action[item_id][symbol_after_dot.value] = before_action
+						else:
+							action[item_id][symbol_after_dot.value] = 's' + str(next_item_id)  # 移入
 			
 
 
@@ -300,25 +332,51 @@ def print_item(item):
 def test():
 	global productions, symbols, items, goto_table, action
 
-	nt_Sp = Symbol("S'", 2)
-	nt_S = Symbol('S', 2)
-	nt_C = Symbol('C', 2)
-	t_c = Symbol('c', 1)
-	t_d = Symbol('d', 1)
+	# nt_Sp = Symbol("S'", 2)
+	# nt_S = Symbol('S', 2)
+	# nt_C = Symbol('C', 2)
+	# t_c = Symbol('c', 1)
+	# t_d = Symbol('d', 1)
+
+	# symbols = [
+	# 	nt_Sp,
+	# 	nt_S,
+	# 	nt_C,
+	# 	t_c,
+	# 	t_d
+	# ]
+
+	# productions = [
+	# 	Production(0, nt_Sp, [nt_S]),
+	# 	Production(1, nt_S, [nt_C, nt_C]),
+	# 	Production(2, nt_C, [t_c, nt_C]),
+	# 	Production(3, nt_C, [t_d])
+	# ]
+
+	nt_Ep = Symbol("E'", 2)
+	nt_E = Symbol('E', 2)
+	t_plus = Symbol('+', 1)
+	t_mul = Symbol('*', 1)
+	t_left = Symbol('(', 1)
+	t_right = Symbol(')', 1)
+	t_id = Symbol('i', 1)
 
 	symbols = [
-		nt_Sp,
-		nt_S,
-		nt_C,
-		t_c,
-		t_d
+		nt_Ep,
+		nt_E,
+		t_plus,
+		t_mul,
+		t_left,
+		t_right,
+		t_id
 	]
 
 	productions = [
-		Production(0, nt_Sp, [nt_S]),
-		Production(1, nt_S, [nt_C, nt_C]),
-		Production(2, nt_C, [t_c, nt_C]),
-		Production(3, nt_C, [t_d])
+		Production(0, nt_Ep, [nt_E]),
+		Production(1, nt_E, [nt_E, t_plus, nt_E]),
+		Production(2, nt_E, [nt_E, t_mul, nt_E]),
+		Production(3, nt_E, [t_left, nt_E, t_right]),
+		Production(4, nt_E, [t_id])
 	]
 
 	generate_items()
@@ -326,7 +384,7 @@ def test():
 	print_items()
 
 	generate_parsing_table()
-	print goto_table
+	print goto_table, '\n'
 	print action
 
 test()
