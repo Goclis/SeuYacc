@@ -4,9 +4,8 @@ from Queue import Queue
 
 # Item中的单个条目
 class ItemLine(object):
-	def __init__(self, left, right, dot_pos, lookahead):
-		self.left = left  # 产生式左部 : Symbol
-		self.right = right  # 产生式右部序列 : list<Symbol>
+	def __init__(self, pid, dot_pos, lookahead):
+		self.pid = pid  # 对应产生式的id
 		self.dot_pos = dot_pos  # 点在右部的位置 : int
 		self.lookahead = lookahead  # 向前看的符号 : Symbol
 
@@ -17,8 +16,7 @@ class ItemLine(object):
 		# A -> aBc·  dot_pos = 3，即dot_pos == len(ItemLine.right)时就已经没法继续goto了
 
 	def __eq__(self, other):
-		return self.left == other.left \
-			and self.right == other.right \
+		return self.pid == other.pid \
 			and self.dot_pos == other.dot_pos \
 			and self.lookahead == other.lookahead
 
@@ -57,7 +55,8 @@ class Symbol(object):
 
 # 产生式
 class Production(object):
-	def __init__(self, left, right):
+	def __init__(self, pid, left, right):
+		self.pid = pid  # 产生式的ID : int
 		self.left = left  # 产生式左部 : Symbol
 		self.right = right  # 产生式右部序列 : list<Symbol>
 
@@ -84,7 +83,8 @@ def closure(item):
 		current_item_line = item_line_queue.get_nowait()
 
 		dot_pos = current_item_line.dot_pos
-		right = current_item_line.right
+		current_production = productions[current_item_line.pid]
+		right = current_production.right
 		# TODO：需要添加检查dot_pos是否越界
 		if dot_pos < len(right):
 			symbol_after_dot = right[dot_pos] # 点之后的那个Symbol，不需要+1
@@ -106,7 +106,7 @@ def closure(item):
 				if p.left == symbol_after_dot:
 					# 对该产生式，生成新的ItemLine
 					for f in first:
-						new_item_line = ItemLine(symbol_after_dot, p.right, 0, f)
+						new_item_line = ItemLine(p.pid, 0, f)
 						# 将新的ItemLine加入队列并更新至item中
 						# TODO：检查该ItemLine是否已经存在
 						if not new_item_line in item_lines:
@@ -120,11 +120,6 @@ def closure(item):
 	item.item_lines = item_lines
 
 	return item
-
-# 检查一个ItemLine是否已经在该item中了
-def exist_item_line(item, item_line):
-	for l in item.item_lines:
-		pass
 
 
 # 求item通过symbol能到达的下一个item
@@ -143,7 +138,7 @@ def goto(item, symbol):
 		# TODO: dot_pos越界检查
 		if dot_pos < len(right) and right[dot_pos] == symbol:
 			# 新的ItemLine
-			new_item_line = ItemLine(i.left, right, dot_pos + 1, i.lookahead)
+			new_item_line = ItemLine(i.pid, dot_pos + 1, i.lookahead)
 			new_item.insert_item_line(new_item_line)
 
 	# TODO: 这里可以加一步判断减少一次无用的闭包操作（针对空的item_lines）
@@ -159,7 +154,7 @@ def generate_items():
 	start_production = productions[0]
 	start_item = Item(0)
 	start_item.insert_item_line(
-		ItemLine(start_production.left, start_production.right, 0, Symbol('$', 1)))
+		ItemLine(start_production.pid, 0, Symbol('$', 1)))
 	items.append(start_item)
 	item_queue.put_nowait(start_item)
 
@@ -262,9 +257,9 @@ def test():
 	]
 
 	productions = [
-		Production(nt_S, [nt_A, t_c]),
-		Production(nt_A, [nt_A, t_b]),
-		Production(nt_A, [t_b])
+		Production(0, nt_S, [nt_A, t_c]),
+		Production(1, nt_A, [nt_A, t_b]),
+		Production(2, nt_A, [t_b])
 	]
 
 	# p2 = productions[1]
@@ -275,16 +270,17 @@ def test():
 	# for i in r:
 	# 	print i.value
 
-	# start_production = productions[0]
-	# start_item = Item(0)
-	# start_item.insert_item_line(
-	# 	ItemLine(start_production.left, start_production.right, 0, Symbol('$', 1)))
-	# c = closure(start_item)
+	start_production = productions[0]
+	start_item = Item(0)
+	start_item.insert_item_line(
+		ItemLine(start_production.pid, 0, Symbol('$', 1)))
+	c = closure(start_item)
 
 
-	# lines = c.item_lines
-	# for l in lines:
-	# 	print l.left.value, [j.value for j in l.right], l.dot_pos, l.lookahead.value
+	lines = c.item_lines
+	for l in lines:
+		p = productions[l.pid]
+		print p.left.value, [j.value for j in p.right], l.dot_pos, l.lookahead.value
 
 	# print '\n'
 	# c = goto(c, nt_A)
@@ -293,8 +289,8 @@ def test():
 	# for l in lines:
 	# 	print l.left.value, [j.value for j in l.right], l.dot_pos, l.lookahead.value
 
-	generate_items()
+	# generate_items()
 
-	print_items()
+	# print_items()
 
 test()
