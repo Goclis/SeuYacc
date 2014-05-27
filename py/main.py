@@ -1,3 +1,5 @@
+# -*- coding:utf-8 -*-
+
 from Queue import Queue
 
 # Item中的单个条目
@@ -14,6 +16,12 @@ class ItemLine(object):
 		# A -> aB·c  dot_pos = 2
 		# A -> aBc·  dot_pos = 3，即dot_pos == len(ItemLine.right)时就已经没法继续goto了
 
+	def __eq__(self, other):
+		return self.left == other.left \
+			and self.right == other.right \
+			and self.dot_pos == other.dot_pos \
+			and self.lookahead == other.lookahead
+
 # 状态机中的每个Item
 class Item(object):
 	def __init__(self, item_id):
@@ -25,11 +33,27 @@ class Item(object):
 		self.item_lines.append(item_line)
 		# TODO: 可以考虑修改成保存ID，将所有ItemLine抽取出来
 
+	def __eq__(self, other):
+		s_i = self.item_lines
+		o_i = other.item_lines
+
+		s_i.sort()
+		o_i.sort()
+
+		if s_i == o_i:
+			return True
+		else:
+			return False
+
 # 文法符号，包含terminal，nonterminal和epsilon
 class Symbol(object):
 	def __init__(self, s_value, s_type):
 		self.value = s_value  # Symbol值 : string TODO:可以考虑维护一个Symbol list，然后这里保存id
 		self.type = s_type  # Symbol类型 : int  0为epsilon，1为terminal，2为nonterminal
+
+	def __eq__(self, other):
+		return self.value == other.value \
+			and self.type == other.type
 
 # 产生式
 class Production(object):
@@ -41,6 +65,7 @@ class Production(object):
 productions = []  # 所有的产生式
 symbols = []  # 所有的文法符号
 items = []  # 所有的状态机
+goto_table = {}
 
 # 求item的闭包（扩展item）
 # @item : Item
@@ -48,7 +73,7 @@ items = []  # 所有的状态机
 def closure(item):
 	global productions
 
-	item_lines = item['item_lines']  # a list of item_line
+	item_lines = item.item_lines  # a list of item_line
 
 	item_line_queue = Queue()  # 用于跟踪的队列
 	for i in item_lines:
@@ -58,39 +83,49 @@ def closure(item):
 		# 弹出一个ItemLine  [A -> alpha·B beta, a]
 		current_item_line = item_line_queue.get_nowait()
 
-		dot_pos = current_item_line['dot_pos']
-		right = current_item_line['right']
+		dot_pos = current_item_line.dot_pos
+		right = current_item_line.right
 		# TODO：需要添加检查dot_pos是否越界
-		symbol_after_dot = right[dot_pos] # 点之后的那个Symbol，不需要+1
-		new_dot_pos = dot_pos + 1
+		if dot_pos < len(right):
+			symbol_after_dot = right[dot_pos] # 点之后的那个Symbol，不需要+1
+			new_dot_pos = dot_pos + 1
+		else:
+			continue
 
-		if symbol_after_dot['type'] == 'nonterminal':
-			# 获取点之后所有的symbol
-			symbols = right[dot_pos : ]
-			symbols.append(current_item_line['lookahead']) # beta a
+		if symbol_after_dot.type == 2:  # nonterminal
+			# 获取该symbol之后所有的symbol
+			symbols_after_dot = right[new_dot_pos : ]
+			symbols_after_dot.append(current_item_line.lookahead) # beta a
 
 			# 求First
 			# TODO: 实现first_beta_a
-			first = first_beta_a(symbols)
+			first = first_beta_a(symbols_after_dot)
 
 			# 遍历所有产生式，找头部为symbol_after_dot的产生式
 			for p in productions:
-				if p['left'] == symbol_after_dot:
+				if p.left == symbol_after_dot:
 					# 对该产生式，生成新的ItemLine
 					for f in first:
-						new_item_line = ItemLine(symbol_after_dot, p['right'], new_dot_pos, f)
+						new_item_line = ItemLine(symbol_after_dot, p.right, 0, f)
 						# 将新的ItemLine加入队列并更新至item中
 						# TODO：检查该ItemLine是否已经存在
-						item_lines.append(new_item_line)
-						item_line_queue.put_nowait(new_item_line)
+						if not new_item_line in item_lines:
+							item_lines.append(new_item_line)
+							item_line_queue.put_nowait(new_item_line)
 
 		else:
 			# terminal或者epsilon不用处理
 			pass
 
-	item['item_lines'] = item_lines
+	item.item_lines = item_lines
 
 	return item
+
+# 检查一个ItemLine是否已经在该item中了
+def exist_item_line(item, item_line):
+	for l in item.item_lines:
+		pass
+
 
 # 求item通过symbol能到达的下一个item
 # @item : Item
@@ -100,15 +135,15 @@ def goto(item, symbol):
 	global items
 	new_item = Item(len(items))  # 新建一个Item
 
-	item_lines = item['item_lines']
+	item_lines = item.item_lines
 	for i in item_lines:
-		dot_pos = i['dot_pos']
-		right = i['right']
+		dot_pos = i.dot_pos
+		right = i.right
 
 		# TODO: dot_pos越界检查
-		if right[dot_pos] == symbol:
+		if dot_pos < len(right) and right[dot_pos] == symbol:
 			# 新的ItemLine
-			new_item_line = ItemLine(i['left'], right, dot_pos + 1, i['lookahead'])
+			new_item_line = ItemLine(i.left, right, dot_pos + 1, i.lookahead)
 			new_item.insert_item_line(new_item_line)
 
 	# TODO: 这里可以加一步判断减少一次无用的闭包操作（针对空的item_lines）
@@ -116,7 +151,7 @@ def goto(item, symbol):
 
 # 生成所有的Item
 def generate_items():
-	global items, symbols
+	global items, symbols, goto_table
 
 	item_queue = Queue()
 
@@ -124,7 +159,7 @@ def generate_items():
 	start_production = productions[0]
 	start_item = Item(0)
 	start_item.insert_item_line(
-		ItemLine(start_production['left'], start_production['right'], 0, Symbol('$', 1)))
+		ItemLine(start_production.left, start_production.right, 0, Symbol('$', 1)))
 	items.append(start_item)
 	item_queue.put_nowait(start_item)
 
@@ -134,9 +169,20 @@ def generate_items():
 		for s in symbols:
 			next_item = goto(current_item, s)
 			# 检查next_item是否为空（即无条目）以及items中是否已经存在，这里应该要自己写判断函数
-			if not next_item['item_lines'] and items.indexOf(next_item) == -1:
+			if not next_item.item_lines and not next_item in items:
 				items.append(next_item)
 				item_queue.put_nowait(next_item)
+
+				# 添加到goto表中
+				s_id = current_item.item_id
+				
+				if s_id not in goto_table.keys():
+					goto_table[s_id] = {}
+
+				goto_table[s_id][s.value] = next_item.item_id  # 建立边
+
+		# print_items()
+
 
 	# items生成完毕。。。
 
@@ -149,9 +195,9 @@ def first_beta_a(symbols):
 	for i in range(len(symbols)):
 		current_symbol = symbols[i]
 
-		if current_symbol.s_type == 0:
+		if current_symbol.type == 0:
 			return ['epsilon']
-		elif current_symbol.s_type == 1:
+		elif current_symbol.type == 1:
 			# check 0 ~ i-1
 			for j in range(i):
 				if 'epsilon' not in first(symbols[i]):
@@ -160,7 +206,7 @@ def first_beta_a(symbols):
 			return result
 		else:
 			# check 0 ~ i-1
-			for j in range(j):
+			for j in range(i):
 				if 'epsilon' not in first(symbols[i]):
 					return result
 			result.extend(first(current_symbol))
@@ -178,8 +224,8 @@ def first(symbol):
 	result = []
 	# 遍历产生式
 	for production in productions:
-		if production['left'] == symbol:
-			right_list = production['right']
+		if production.left == symbol:
+			right_list = production.right
 
 			if right_list[0] == symbol:  # 直接左递归，直接忽略
 				pass
@@ -189,13 +235,66 @@ def first(symbol):
 	return result
 
 
-# # for single nonterminal
-# def first(x):
-# 	result = []
-# 	# 遍历所有的产生式
-# 	for production in productions:
-# 		if production['left'] == x:
-# 			right_list = production['right']
+def print_items():
+	global items
+
+	for i in items:
+		lines = i.item_lines
+
+		for l in lines:
+			print l.left.value, [j.value for j in l.right], l.dot_pos, l.lookahead.value
+
+		print '\n'
+
+def test():
+	global productions, symbols, items
+
+	nt_S = Symbol('S', 2)
+	nt_A = Symbol('A', 2)
+	t_c = Symbol('c', 1)
+	t_b = Symbol('b', 1)
+
+	symbols = [
+		nt_S,
+		nt_A,
+		t_c,
+		t_b
+	]
+
+	productions = [
+		Production(nt_S, [nt_A, t_c]),
+		Production(nt_A, [nt_A, t_b]),
+		Production(nt_A, [t_b])
+	]
+
+	# p2 = productions[1]
+	# # print p2.left == nt_A
 
 
+	# r = first_beta_a([nt_A, t_c])
+	# for i in r:
+	# 	print i.value
 
+	# start_production = productions[0]
+	# start_item = Item(0)
+	# start_item.insert_item_line(
+	# 	ItemLine(start_production.left, start_production.right, 0, Symbol('$', 1)))
+	# c = closure(start_item)
+
+
+	# lines = c.item_lines
+	# for l in lines:
+	# 	print l.left.value, [j.value for j in l.right], l.dot_pos, l.lookahead.value
+
+	# print '\n'
+	# c = goto(c, nt_A)
+
+	# lines = c.item_lines
+	# for l in lines:
+	# 	print l.left.value, [j.value for j in l.right], l.dot_pos, l.lookahead.value
+
+	generate_items()
+
+	print_items()
+
+test()
