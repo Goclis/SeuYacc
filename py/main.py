@@ -127,13 +127,13 @@ def closure(item):
 # @symbol : Symbol
 # @return 直接返回生成的item，即使为空
 def goto(item, symbol):
-	global items
+	global items, productions
 	new_item = Item(len(items))  # 新建一个Item
 
 	item_lines = item.item_lines
 	for i in item_lines:
 		dot_pos = i.dot_pos
-		right = i.right
+		right = productions[i.pid].right
 
 		# TODO: dot_pos越界检查
 		if dot_pos < len(right) and right[dot_pos] == symbol:
@@ -155,16 +155,16 @@ def generate_items():
 	start_item = Item(0)
 	start_item.insert_item_line(
 		ItemLine(start_production.pid, 0, Symbol('$', 1)))
+	start_item = closure(start_item)
 	items.append(start_item)
 	item_queue.put_nowait(start_item)
 
 	while not item_queue.empty():
 		current_item = item_queue.get_nowait()  # 弹出一个Item
-
 		for s in symbols:
 			next_item = goto(current_item, s)
 			# 检查next_item是否为空（即无条目）以及items中是否已经存在，这里应该要自己写判断函数
-			if not next_item.item_lines and not next_item in items:
+			if next_item.item_lines and next_item not in items:
 				items.append(next_item)
 				item_queue.put_nowait(next_item)
 
@@ -175,9 +175,6 @@ def generate_items():
 					goto_table[s_id] = {}
 
 				goto_table[s_id][s.value] = next_item.item_id  # 建立边
-
-		# print_items()
-
 
 	# items生成完毕。。。
 
@@ -231,18 +228,26 @@ def first(symbol):
 
 
 def print_items():
-	global items
+	global items, productions
 
 	for i in items:
 		lines = i.item_lines
 
 		for l in lines:
-			print l.left.value, [j.value for j in l.right], l.dot_pos, l.lookahead.value
+			p = productions[l.pid]
+			print p.left.value, [j.value for j in p.right], l.dot_pos, l.lookahead.value
 
 		print '\n'
 
+def print_item(item):
+	lines = item.item_lines
+
+	for l in lines:
+		p = productions[l.pid]
+		print p.left.value, [j.value for j in p.right], l.dot_pos, l.lookahead.value
+
 def test():
-	global productions, symbols, items
+	global productions, symbols, items, goto_table
 
 	nt_S = Symbol('S', 2)
 	nt_A = Symbol('A', 2)
@@ -262,35 +267,10 @@ def test():
 		Production(2, nt_A, [t_b])
 	]
 
-	# p2 = productions[1]
-	# # print p2.left == nt_A
+	generate_items()
 
+	print_items()
 
-	# r = first_beta_a([nt_A, t_c])
-	# for i in r:
-	# 	print i.value
-
-	start_production = productions[0]
-	start_item = Item(0)
-	start_item.insert_item_line(
-		ItemLine(start_production.pid, 0, Symbol('$', 1)))
-	c = closure(start_item)
-
-
-	lines = c.item_lines
-	for l in lines:
-		p = productions[l.pid]
-		print p.left.value, [j.value for j in p.right], l.dot_pos, l.lookahead.value
-
-	# print '\n'
-	# c = goto(c, nt_A)
-
-	# lines = c.item_lines
-	# for l in lines:
-	# 	print l.left.value, [j.value for j in l.right], l.dot_pos, l.lookahead.value
-
-	# generate_items()
-
-	# print_items()
+	print goto_table
 
 test()
