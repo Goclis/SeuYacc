@@ -35,8 +35,8 @@ class Item(object):
 		s_i = self.item_lines
 		o_i = other.item_lines
 
-		s_i.sort()
-		o_i.sort()
+		s_i.sort(key = lambda x: (x.pid, x.dot_pos, x.lookahead.value))
+		o_i.sort(key = lambda x: (x.pid, x.dot_pos, x.lookahead.value))
 
 		if s_i == o_i:
 			return True
@@ -65,6 +65,7 @@ productions = []  # 所有的产生式
 symbols = []  # 所有的文法符号
 items = []  # 所有的状态机
 goto_table = {}
+action = {}
 
 # 求item的闭包（扩展item）
 # @item : Item
@@ -121,7 +122,6 @@ def closure(item):
 
 	return item
 
-
 # 求item通过symbol能到达的下一个item
 # @item : Item
 # @symbol : Symbol
@@ -164,10 +164,14 @@ def generate_items():
 		for s in symbols:
 			next_item = goto(current_item, s)
 			# 检查next_item是否为空（即无条目）以及items中是否已经存在，这里应该要自己写判断函数
-			if next_item.item_lines and next_item not in items:
-				items.append(next_item)
-				item_queue.put_nowait(next_item)
-
+			if next_item.item_lines:
+				tmp = is_item_exist(next_item)
+				if not tmp:
+					items.append(next_item)
+					item_queue.put_nowait(next_item)
+				else:
+					next_item = tmp
+				
 				# 添加到goto表中
 				s_id = current_item.item_id
 				
@@ -177,6 +181,42 @@ def generate_items():
 				goto_table[s_id][s.value] = next_item.item_id  # 建立边
 
 	# items生成完毕。。。
+
+# 生成ACTION和GOTO
+def generate_parsing_table():
+	global items, action, productions, symbols, goto_table
+
+	for i in items:
+		item_id = i.item_id
+		if item_id not in action.keys():
+			action[item_id] = {}
+
+		item_lines = i.item_lines
+		for l in item_lines:
+			p = productions[l.pid]
+			dot_pos = l.dot_pos
+
+			if dot_pos < len(p.right):
+				symbol_after_dot = p.right[dot_pos]  # 在点后面的符号
+			else:
+				symbol_after_dot = ''
+			
+			if not symbol_after_dot:  # 点在最后了
+				if l.pid == 0:  # [S'->S·, $]
+					action[item_id]['$'] = 'acc'
+					break  # 针对这个item没必要继续了
+				else:
+					action[item_id][l.lookahead.value] = 'r' + str(l.pid)  # 规约
+			elif symbol_after_dot.type == 1:  # terminal
+				current_item_goto = goto_table.get(item_id, '')
+				if current_item_goto:
+					next_item_id = current_item_goto.get(symbol_after_dot.value, '')
+					if next_item_id:
+						print 'action[%s][%s] = s%s' % (item_id, symbol_after_dot.value, next_item_id)
+
+						action[item_id][symbol_after_dot.value] = 's' + str(next_item_id)  # 移入
+			
+
 
 # 求一个符号串的first集合
 # @symbols : list<Symbol> 符号串
@@ -226,7 +266,6 @@ def first(symbol):
 
 	return result
 
-
 def print_items():
 	global items, productions
 
@@ -239,38 +278,55 @@ def print_items():
 
 		print '\n'
 
+# 检查该Item是否已存在
+# @return 存在则返回已存在的item，否则返回False
+def is_item_exist(item):
+	global items
+
+	for i in items:
+		if i == item:
+			return i
+
+	return False
+
+
 def print_item(item):
 	lines = item.item_lines
-
+	lines.sort()
 	for l in lines:
 		p = productions[l.pid]
 		print p.left.value, [j.value for j in p.right], l.dot_pos, l.lookahead.value
 
 def test():
-	global productions, symbols, items, goto_table
+	global productions, symbols, items, goto_table, action
 
+	nt_Sp = Symbol("S'", 2)
 	nt_S = Symbol('S', 2)
-	nt_A = Symbol('A', 2)
+	nt_C = Symbol('C', 2)
 	t_c = Symbol('c', 1)
-	t_b = Symbol('b', 1)
+	t_d = Symbol('d', 1)
 
 	symbols = [
+		nt_Sp,
 		nt_S,
-		nt_A,
+		nt_C,
 		t_c,
-		t_b
+		t_d
 	]
 
 	productions = [
-		Production(0, nt_S, [nt_A, t_c]),
-		Production(1, nt_A, [nt_A, t_b]),
-		Production(2, nt_A, [t_b])
+		Production(0, nt_Sp, [nt_S]),
+		Production(1, nt_S, [nt_C, nt_C]),
+		Production(2, nt_C, [t_c, nt_C]),
+		Production(3, nt_C, [t_d])
 	]
 
 	generate_items()
 
 	print_items()
 
+	generate_parsing_table()
 	print goto_table
+	print action
 
 test()
