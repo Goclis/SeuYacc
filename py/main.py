@@ -289,19 +289,19 @@ def fix_conflict():
 		inside_symbol_property = priority[symbol_in_production.value]  # 在产生式体中的符号的优先级属性
 		outside_symbol_property = priority[conflict_symbol_value]  # 新遇到的符号的优先级属性
 		
-		if inside_symbol_property[0] == 0:  # 左结合
-			if outside_symbol_property[0] == 0:  # 也是左结合
-				# 比较优先级
-				if outside_symbol_property[1] >= inside_symbol_property[1]:
-					# 选择移入
-					action[conflict_item.item_id][conflict_symbol_value] = 's' + conflict_target_item
-				else:
-					# 规约
-					action[conflict_item.item_id][conflict_symbol_value] = 'r' + conflict_pid
-			else:
-				pass  # 先不考虑右结合。。
+		if inside_symbol_property[1] > outside_symbol_property[1]:  # 内部优先级高
+			# 规约
+			action[conflict_item.item_id][conflict_symbol_value] = 'r' + conflict_pid
+		elif inside_symbol_property[1] < outside_symbol_property[1]:  # 外部优先级高
+			# 移入
+			action[conflict_item.item_id][conflict_symbol_value] = 's' + conflict_target_item
 		else:
-			pass  # 先不考虑右结合。。
+			if inside_symbol_property[0] == 0: # 左结合
+				# 这里假设外部也得是左结合，规约
+				action[conflict_item.item_id][conflict_symbol_value] = 'r' + conflict_pid
+			else:
+				# 右结合，假设外部也是右结合，移入
+				action[conflict_item.item_id][conflict_symbol_value] = 's' + conflict_target_item
 
 # 求一个符号串的first集合
 # @symbols : list<Symbol> 符号串
