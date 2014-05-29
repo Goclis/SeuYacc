@@ -170,12 +170,56 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
+			<File
+				RelativePath=".\Item.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ItemLine.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Production.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Symbol.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\utest.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\YaccManager.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="头文件"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\Item.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ItemLine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Production.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Symbol.h"
+				>
+			</File>
+			<File
+				RelativePath=".\YaccManager.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="资源文件"
