@@ -3,9 +3,13 @@
 
 #pragma once
 
+#include <ItemLine.h>
+
 class Item
 {
 public:
+    vector<ItemLine> item_lines;
+
     Item(void);
     ~Item(void);
 };

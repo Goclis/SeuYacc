@@ -1,5 +1,6 @@
 #include "YaccManager.h"
 #include <iostream>
+#include <queue>
 
 using namespace std;
 
@@ -61,6 +62,13 @@ vector<Symbol> YaccManager::remove_epsilon(const vector<Symbol> &s)
     }
 
     return result;
+}
+
+bool YaccManager::is_item_line_in_item(const ItemLine &il, const vector<ItemLine> &vil)
+{
+    for (size_t i = 0; i < vil.size(); i++) {
+        
+    }
 }
 
 /************ Helper Function End **************/
@@ -141,6 +149,58 @@ vector<Symbol> YaccManager::first_beta_a(vector<Symbol> &symbols)
     }
 
     return remove_epsilon(result);
+}
+
+Item YaccManager::closure(Item &item)
+{
+    vector<ItemLine> item_lines = item.item_lines;
+    queue<ItemLine> item_line_queue;
+    for (size_t i = 0; i < item_lines.size(); i++) {
+        item_line_queue.push(item_lines.at(i));
+    }
+
+    while (!item_line_queue.empty()) {
+        ItemLine current = item_line_queue.pop();
+
+        int dot_pos = current.dot_pos;
+        Production current_production = productions.at(current.pid);
+        vector<Symbol> right = current_production.right;
+        int new_dot_pos = 0;
+        Symbol symbol_after_dot;
+        // 检查dot_pos是否在末尾了
+        if (dot_pos < right.size()) {
+            symbol_after_dot = right[dot_pos];
+            new_dot_pos = dot_pos + 1;
+        } else {
+            continue;
+        }
+
+        int type = symbol_after_dot.type;
+        if (type == 2) {
+            // 该symbol之后的所有符号
+            vector<Symbol> symbols_after_dot(
+                right.begin() + new_dot_pos, right.end());
+            symbols_after_dot.push_back(current.lookahead);
+            
+            // 求first_beta_a
+            vector<Symbol> first_rs = first_beta_a(symbols_after_dot);
+            
+            // 遍历产生式，寻找左部为symbol_after_dot的
+            for (size_t i = 0; i < productions.size(); i++) {
+                Production iterate_p = productions.at(i);
+                if (iterate_p.left.equal(symbol_after_dot)) {
+                    // 遍历first_beta_a集合，添加ItemLine
+                    for (size_t j = 0; j < first_rs.size(); j++) {
+                        ItemLine new_item_line(iterate_p.pid, 0, first_rs.at(j));
+                        // 检查是否已存在于Item中
+                        if (!is_item_line_in_item(new_item_line, item_lines)) {
+
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 

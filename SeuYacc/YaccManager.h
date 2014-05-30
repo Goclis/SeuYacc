@@ -35,6 +35,7 @@ private:
     bool is_symbol_in_first_set(const vector<Symbol> &s, const Symbol &i);
     void merge_two_first_set(vector<Symbol> &s1, const vector<Symbol> &s2);
     vector<Symbol> remove_epsilon(const vector<Symbol> &s);
+    bool is_item_line_in_item(const ItemLine &il, const vector<ItemLine> &vil);
 };
 
 #endif // _YACCMANAGER_H_
