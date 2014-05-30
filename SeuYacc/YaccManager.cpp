@@ -67,8 +67,12 @@ vector<Symbol> YaccManager::remove_epsilon(const vector<Symbol> &s)
 bool YaccManager::is_item_line_in_item(const ItemLine &il, const vector<ItemLine> &vil)
 {
     for (size_t i = 0; i < vil.size(); i++) {
-        
+		if (il.equal(vil.at(i))) {
+			return true;
+		}
     }
+
+	return false;
 }
 
 /************ Helper Function End **************/
@@ -151,6 +155,11 @@ vector<Symbol> YaccManager::first_beta_a(vector<Symbol> &symbols)
     return remove_epsilon(result);
 }
 
+/*
+ * 求闭包
+ * @item : Item
+ * @return : Item
+ */
 Item YaccManager::closure(Item &item)
 {
     vector<ItemLine> item_lines = item.item_lines;
@@ -160,7 +169,8 @@ Item YaccManager::closure(Item &item)
     }
 
     while (!item_line_queue.empty()) {
-        ItemLine current = item_line_queue.pop();
+        ItemLine current = item_line_queue.back();
+		item_line_queue.pop();
 
         int dot_pos = current.dot_pos;
         Production current_production = productions.at(current.pid);
@@ -168,7 +178,7 @@ Item YaccManager::closure(Item &item)
         int new_dot_pos = 0;
         Symbol symbol_after_dot;
         // 检查dot_pos是否在末尾了
-        if (dot_pos < right.size()) {
+        if (dot_pos < (int) right.size()) {
             symbol_after_dot = right[dot_pos];
             new_dot_pos = dot_pos + 1;
         } else {
@@ -194,26 +204,40 @@ Item YaccManager::closure(Item &item)
                         ItemLine new_item_line(iterate_p.pid, 0, first_rs.at(j));
                         // 检查是否已存在于Item中
                         if (!is_item_line_in_item(new_item_line, item_lines)) {
-
+							item_lines.push_back(new_item_line);
+							item_line_queue.push(new_item_line);
                         }
                     }
                 }
             }
         }
     }
+
+	item.item_lines = item_lines;
+	return item;
 }
 
-
+/*
+ * 设置产生式
+ * @ps : vector<Production>
+ * @return : void
+ */
 void YaccManager::set_productions(vector<Production> &ps)
 {
     this->productions = ps;
 }
 
+/*
+ * 设置文法符号
+ * @ss : vector<Symbol>
+ * @return : void
+ */
 void YaccManager::set_symbols(vector<Symbol> &ss)
 {
     this->symbols = ss;
 }
 
+/* 测试用例 */
 void YaccManager::test_run()
 {
     vector<Symbol> rs = first_beta_a(productions.at(0).right);

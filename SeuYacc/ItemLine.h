@@ -12,7 +12,10 @@ public:
     int dot_pos;
     Symbol lookahead;
 
+	bool equal(const ItemLine &other) const;
+
     ItemLine(void);
+	ItemLine(int p, int d, Symbol &look);
     ~ItemLine(void);
 };
 
