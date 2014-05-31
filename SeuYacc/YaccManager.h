@@ -33,14 +33,15 @@ private:
     vector<Production> productions;
     vector<Symbol> symbols;
     vector<Item> items;
-    vector<map<const char *, int>> goto_table;
-    vector<map<const char *, string>> action;
+    vector<map<string, int>> goto_table;
+    vector<map<string, string>> action;
 
     bool is_symbol_in_first_set(const vector<Symbol> &s, const Symbol &i);
     void merge_two_first_set(vector<Symbol> &s1, const vector<Symbol> &s2);
     vector<Symbol> remove_epsilon(const vector<Symbol> &s);
     bool is_item_line_in_item(const ItemLine &il, const vector<ItemLine> &vil);
     Item is_item_exist(const Item &i);
+    string string_concat_int(string &head, int i);
 };
 
 #endif // _YACCMANAGER_H_

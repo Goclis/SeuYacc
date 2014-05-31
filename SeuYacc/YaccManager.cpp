@@ -1,13 +1,15 @@
 #include "YaccManager.h"
 #include <iostream>
+#include <sstream>
 #include <queue>
 
 using namespace std;
 
 YaccManager::YaccManager(void)
 {
-    // TODO: 动态扩展goto_table的大小，这里定死了。
-    goto_table = vector<map<const char *, int>>(1000);
+    // TODO: 动态扩展goto_table和action的大小，这里定死了。
+    goto_table = vector<map<string, int>>(1000);
+    action = vector<map<string, string>>(1000);
 }
 
 YaccManager::~YaccManager(void)
@@ -97,6 +99,19 @@ Item YaccManager::is_item_exist(const Item &it)
     }
     
     return Item(-1);
+}
+
+/*
+ * 把string和int拼接起来
+ * @head : string
+ * @i : int
+ * @return : string
+ */
+string YaccManager::string_concat_int(string &head, int i)
+{
+    stringstream sstm;
+    sstm << head << i;
+    return sstm.str();
 }
 
 /************ Helper Function End **************/
@@ -307,7 +322,72 @@ void YaccManager::generate_items()
 //                     // 容量不够，扩容
 //                     goto_table.resize(goto_table.max_size() * 2);
 //                 }
-                goto_table[s_id][symbols.at(si).value.c_str()] = t_id;
+                goto_table[s_id][symbols.at(si).value] = t_id;
+            }
+        }
+    }
+}
+
+/*
+ * 生成解析表，保存至action中，这里不解决冲突
+ * @return : void
+ */
+void YaccManager::generate_parsing_table()
+{
+    for (size_t item_index = 0; item_index < items.size(); item_index++) {
+        Item current_item = items.at(item_index);
+        int item_id = current_item.item_id;
+        vector<ItemLine> item_lines = current_item.item_lines;
+        
+        // 遍历ItemLine
+        for (size_t item_line_i = 0; item_line_i < item_lines.size(); item_line_i++) {
+            ItemLine current_item_line = item_lines.at(item_line_i);
+            Production p = productions.at(current_item_line.pid);
+            int dot_pos = current_item_line.dot_pos;
+            
+            Symbol symbol_after_dot;
+            if (dot_pos < (int) p.right.size()) {
+                // 点不在末尾
+                symbol_after_dot = p.right[dot_pos];
+            } else {
+                symbol_after_dot.value = "";
+            }
+
+            if (symbol_after_dot.value.empty()) { // 点在最后了
+                if (current_item_line.pid == 0) { // [S'->S·, $]
+                    action[item_id]["$"] = "acc";
+                    break; // 这个Item没必要继续了（只可能有一个）
+                } else {
+                    const char *key = current_item_line.lookahead.value.c_str();
+
+                    string before_action = action[item_id][current_item_line.lookahead.value];
+                    string current_action = string_concat_int(string("r"), current_item_line.pid);
+                    
+                    if (before_action.empty()) {
+                        before_action = current_action;
+                    } else if (before_action.find(current_action.c_str()) != -1) {
+                        // 已经存在此动作
+                    } else {
+                        before_action += "|" + current_action;
+                    }
+
+                    action[item_id][current_item_line.lookahead.value] = before_action;
+                }
+            } else if (symbol_after_dot.type == 1) {  // terminal
+                int target = goto_table[item_id][symbol_after_dot.value];
+                
+                string before_action = action[item_id][symbol_after_dot.value];
+                string current_action = string_concat_int(string("s"), target);
+                
+                if (before_action.empty()) {
+                    before_action = current_action;
+                } else if (before_action.find(current_action.c_str()) != -1) {
+                    // 已经存在此动作
+                } else {
+                    before_action += "|" + current_action;
+                }
+
+                action[item_id][symbol_after_dot.value] = before_action;
             }
         }
     }
@@ -395,6 +475,20 @@ void YaccManager::test_run()
                  cout << right.at(j).value << "";
              }
              cout << ", " << tmp_rs.dot_pos << ", " << tmp_rs.lookahead.value << endl;
+        }
+
+        cout << endl;
+    }
+
+    generate_parsing_table();
+    
+    size_t l = items.size();
+    for (size_t i = 0; i < l; i++) {
+        map<string, string> ca = action.at(i);
+
+        map<string, string>::iterator it = ca.begin();
+        for (; it != ca.end(); ++it) {
+            cout << "(" << it->first << ", " << it->second << ")" << endl;
         }
 
         cout << endl;
