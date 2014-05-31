@@ -114,6 +114,17 @@ string YaccManager::string_concat_int(string &head, int i)
     return sstm.str();
 }
 
+vector<string> YaccManager::string_split(string &s, char delim)
+{
+    stringstream sstm(s);
+    string item;
+    vector<string> result;
+    while (getline(sstm, item, delim)) {
+        result.push_back(item);
+    }
+    return result;
+}
+
 /************ Helper Function End **************/
 
 /*
@@ -394,6 +405,88 @@ void YaccManager::generate_parsing_table()
 }
 
 /*
+ * 根据定义的优先级解决冲突
+ * @return : void
+ */
+void YaccManager::fix_conflict()
+{
+    // 遍历action，找到有冲突的项
+    size_t l = items.size();
+    for (size_t i = 0; i < l; i++) {
+        map<string, string> ca = action.at(i);
+
+        map<string, string>::iterator it = ca.begin();
+        for (; it != ca.end(); ++it) {
+            string current_action = it->second;
+
+            if (current_action.find("|") != -1) { // 存在冲突
+                int conflict_item_id = i;
+                string conflict_symbol_value = it->first;
+                vector<string> conflict_actions = string_split(current_action, '|');
+                
+                int pid;
+                int target_item_id;
+                // 假设只会存在两种冲突。。 移近和规约冲突
+                // 遍历查找冲突的产生式的id
+                for (size_t ai = 0; ai < conflict_actions.size(); ++ai) {
+                    string as = conflict_actions.at(ai);
+                    if (as.find("r") != -1) {
+                        string r = as.substr(as.find("r") + 1);
+                        pid = atoi(r.c_str());
+                    } else if (as.find("s") != -1) {
+                        string s = as.substr(as.find("s") + 1);
+                        target_item_id = atoi(s.c_str());
+                    }
+                }
+
+                Production p = productions.at(pid);
+                vector<Symbol> right = p.right;
+                Symbol symbol_inside; // 产生式中的终结符                
+                // 从后往前找symbol_inside
+                int index = right.size() - 1;
+                while (index >= 0) {
+                    Symbol current = right.at(index);
+                    if (current.type == 1) {
+                        symbol_inside = current;
+                        break;
+                    }
+                    --index;
+                }
+
+                // 查询内外的优先级，根据优先级解决冲突
+                Priority inside_priority = priorities[symbol_inside.value];
+                Priority outside_priority = priorities[conflict_symbol_value];
+                
+                if (symbol_inside.value == "epsilon") {
+                    // A->·，此类暂不处理 = =#不知道怎么弄优先级
+                } else {
+                    if (inside_priority.level > outside_priority.level) { // 内部优先级高
+                        // 规约
+                        action[conflict_item_id][conflict_symbol_value] 
+                            = string_concat_int(string("r"), pid);
+                    } else if (inside_priority.level < outside_priority.level) { // 外部优先级高
+                        // 移进
+                        action[conflict_item_id][conflict_symbol_value]
+                            = string_concat_int(string("s"), target_item_id);
+                    } else {
+                        // 这里假设两个符号结合律相同
+                        if (inside_priority.lr == 0) {
+                            // 左结合，规约
+                            action[conflict_item_id][conflict_symbol_value] 
+                                = string_concat_int(string("r"), pid);
+                        } else {
+                            // 右结合，移进
+                            action[conflict_item_id][conflict_symbol_value]
+                                = string_concat_int(string("s"), target_item_id);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/*
  * 设置产生式
  * @ps : vector<Production>
  * @return : void
@@ -411,6 +504,16 @@ void YaccManager::set_productions(vector<Production> &ps)
 void YaccManager::set_symbols(vector<Symbol> &ss)
 {
     this->symbols = ss;
+}
+
+/*
+ * 设置优先级
+ * @ps : map<string, Priority>
+ * @return : void
+ */
+void YaccManager::set_priorities(map<string, Priority> &ps)
+{
+    priorities = ps;
 }
 
 /* 测试用例 */
@@ -481,7 +584,7 @@ void YaccManager::test_run()
     }
 
     generate_parsing_table();
-    
+    fix_conflict();
     size_t l = items.size();
     for (size_t i = 0; i < l; i++) {
         map<string, string> ca = action.at(i);

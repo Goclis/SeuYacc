@@ -179,6 +179,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Priority.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Production.cpp"
 				>
 			</File>
@@ -206,6 +210,10 @@
 			</File>
 			<File
 				RelativePath=".\ItemLine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Priority.h"
 				>
 			</File>
 			<File

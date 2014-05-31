@@ -1,6 +1,7 @@
 #include "YaccManager.h"
 #include "Production.h"
 #include "Symbol.h"
+#include <map>
 #include <vector>
 
 using namespace std;
@@ -75,10 +76,16 @@ int main(int argc, char **argv)
     ps.push_back(p1);
     ps.push_back(p2);
     ps.push_back(p3);
+
+    map<string, Priority> priorities;
+    priorities["+"] = Priority(1, 0);
+    priorities["*"] = Priority(2, 0);
     
     ym.set_symbols(ss);
     ym.set_productions(ps);
-
+    ym.set_priorities(priorities);
+    
+    
     ym.test_run();
 
     return 0;
