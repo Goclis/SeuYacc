@@ -17,7 +17,9 @@ public:
     Item(void);
 	Item(int id);
     ~Item(void);
-
+    
+    bool equal(const Item &other) const;
+    void insert_item_line(ItemLine &i);
 	void set_item_lines(const vector<ItemLine> &ils);
 };
 

@@ -6,6 +6,8 @@ using namespace std;
 
 YaccManager::YaccManager(void)
 {
+    // TODO: 动态扩展goto_table的大小，这里定死了。
+    goto_table = vector<map<const char *, int>>(1000);
 }
 
 YaccManager::~YaccManager(void)
@@ -64,6 +66,12 @@ vector<Symbol> YaccManager::remove_epsilon(const vector<Symbol> &s)
     return result;
 }
 
+/*
+ * 判断某个ItemLine是否在一个ItemLine集合中
+ * @il : ItemLine
+ * @vil : vector<ItemLine>
+ * @return : bool
+ */
 bool YaccManager::is_item_line_in_item(const ItemLine &il, const vector<ItemLine> &vil)
 {
     for (size_t i = 0; i < vil.size(); i++) {
@@ -73,6 +81,22 @@ bool YaccManager::is_item_line_in_item(const ItemLine &il, const vector<ItemLine
     }
 
 	return false;
+}
+
+/*
+ * 判断某个Item是否已存在
+ * @i : Item
+ * @return : Item 已存在则返回存在的Item，否则返回id为-1的Item
+ */
+Item YaccManager::is_item_exist(const Item &it)
+{
+    for (size_t i = 0; i < items.size(); i++) {
+        if (it.equal(items.at(i))) {
+            return items.at(i);
+        }
+    }
+    
+    return Item(-1);
 }
 
 /************ Helper Function End **************/
@@ -169,7 +193,7 @@ Item YaccManager::closure(Item &item)
     }
 
     while (!item_line_queue.empty()) {
-        ItemLine current = item_line_queue.back();
+        ItemLine current = item_line_queue.front();
 		item_line_queue.pop();
 
         int dot_pos = current.dot_pos;
@@ -179,7 +203,7 @@ Item YaccManager::closure(Item &item)
         Symbol symbol_after_dot;
         // 检查dot_pos是否在末尾了
         if (dot_pos < (int) right.size()) {
-            symbol_after_dot = right[dot_pos];
+            symbol_after_dot = right.at(dot_pos);
             new_dot_pos = dot_pos + 1;
         } else {
             continue;
@@ -218,6 +242,78 @@ Item YaccManager::closure(Item &item)
 }
 
 /*
+ * goto，根据Symbol求下一个Item
+ * @item : Item
+ * @symbol : Symbol
+ * @return : Item
+ */
+Item YaccManager::_goto(Item &item, Symbol &symbol)
+{
+    vector<ItemLine> item_lines = item.item_lines;
+    Item new_Item((int) items.size());
+
+    for (size_t i = 0; i < item_lines.size(); i++) {
+        ItemLine current_item_line = item_lines.at(i);
+        int dot_pos = current_item_line.dot_pos;
+        vector<Symbol> right = productions[current_item_line.pid].right;
+
+        // dot边界检查
+        if (dot_pos < (int) right.size() && right[dot_pos].equal(symbol)) {
+            ItemLine new_item_line(current_item_line.pid, dot_pos + 1, current_item_line.lookahead);
+            new_Item.insert_item_line(new_item_line);
+        }
+    }
+    
+    // TODO:这里可以加一步判断减少一次无用的闭包操作（针对空的item_lines）
+    return closure(new_Item);
+}
+
+/*
+ * 生成所有的项目集（Item），结果保存至items
+ * 同时保存goto信息
+ * @return : void
+ */
+void YaccManager::generate_items()
+{
+    queue<Item> item_queue;
+    Item start_item(0);
+    start_item.insert_item_line(ItemLine(0, 0, Symbol("$", 1)));
+    start_item = closure(start_item);
+    items.push_back(start_item);
+    item_queue.push(start_item);
+
+    while (!item_queue.empty()) {
+        Item current = item_queue.front();
+        item_queue.pop();
+
+        for (size_t si = 0; si < symbols.size(); si++) {
+            Item next_item = _goto(current, symbols.at(si));
+
+            if (next_item.item_lines.size()) { // item_lines不为空，说明生成了Item
+                Item check = is_item_exist(next_item); // 检查Item是否已存在
+                
+                int t_id; // goto table使用的id
+                if (check.item_id == -1) {
+                    items.push_back(next_item);
+                    item_queue.push(next_item);
+                    t_id = next_item.item_id;
+                } else {
+                    t_id = check.item_id;
+                }
+
+                // 更新goto_table
+                int s_id = current.item_id;
+//                 if (s_id < (int) goto_table.max_size() - 1) {
+//                     // 容量不够，扩容
+//                     goto_table.resize(goto_table.max_size() * 2);
+//                 }
+                goto_table[s_id][symbols.at(si).value.c_str()] = t_id;
+            }
+        }
+    }
+}
+
+/*
  * 设置产生式
  * @ps : vector<Production>
  * @return : void
@@ -240,13 +336,67 @@ void YaccManager::set_symbols(vector<Symbol> &ss)
 /* 测试用例 */
 void YaccManager::test_run()
 {
-    vector<Symbol> rs = first_beta_a(productions.at(0).right);
+    // test first_beta_a
+//     vector<Symbol> rs = first_beta_a(productions.at(0).right);
+// 
+//     for (size_t i = 0; i < rs.size(); i++) {
+//         Symbol crs = rs.at(i);
+// 
+//         cout << crs.value << " ";
+//     }
+// 
+//     cout << endl;
 
-    for (size_t i = 0; i < rs.size(); i++) {
-        Symbol crs = rs.at(i);
+    // test closure
+//     Item start_item(0);
+//     vector<ItemLine> item_lines;
+//     item_lines.push_back(ItemLine(0, 0, Symbol("$", 1)));
+//     start_item.item_lines = item_lines;
+//     start_item = closure(start_item);
+//     items.push_back(start_item);
+// 
+//     Item result = _goto(start_item, symbols.at(1));
+// 
+//     vector<ItemLine> rs_ils = result.item_lines;
+//     for (size_t i = 0; i < rs_ils.size(); i++) {
+//         ItemLine tmp_rs = rs_ils.at(i);
+//         Production p = productions[tmp_rs.pid];
+//         cout << p.left.value << " -> ";
+//         vector<Symbol> right = p.right;
+//         for (size_t j = 0; j < right.size(); j++) {
+//             cout << right.at(j).value << "";
+//         }
+//         cout << ", " << tmp_rs.dot_pos << ", " << tmp_rs.lookahead.value << endl;
+//     }
 
-        cout << crs.value << " ";
+    // test Item.equal
+//     Item start_item(0);
+//     vector<ItemLine> item_lines;
+//     item_lines.push_back(ItemLine(0, 0, Symbol("$", 1)));
+//     start_item.item_lines = item_lines;
+//     start_item = closure(start_item);
+//     items.push_back(start_item);
+
+    
+
+    // test generate_items
+    generate_items();
+
+    for (size_t i = 0; i < items.size(); i++) {
+        Item ri = items.at(i);
+        vector<ItemLine> rs_ils = ri.item_lines;
+
+        for (size_t k = 0; k < rs_ils.size(); k++) {
+             ItemLine tmp_rs = rs_ils.at(k);
+             Production p = productions[tmp_rs.pid];
+             cout << p.left.value << " -> ";
+             vector<Symbol> right = p.right;
+             for (size_t j = 0; j < right.size(); j++) {
+                 cout << right.at(j).value << "";
+             }
+             cout << ", " << tmp_rs.dot_pos << ", " << tmp_rs.lookahead.value << endl;
+        }
+
+        cout << endl;
     }
-
-    cout << endl;
 }

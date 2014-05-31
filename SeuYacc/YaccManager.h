@@ -5,6 +5,8 @@
 
 #include <vector>
 #include <string>
+#include <hash_map>
+#include <map>
 #include "Item.h"
 #include "Symbol.h"
 #include "Production.h"
@@ -31,11 +33,14 @@ private:
     vector<Production> productions;
     vector<Symbol> symbols;
     vector<Item> items;
+    vector<map<const char *, int>> goto_table;
+    vector<map<const char *, string>> action;
 
     bool is_symbol_in_first_set(const vector<Symbol> &s, const Symbol &i);
     void merge_two_first_set(vector<Symbol> &s1, const vector<Symbol> &s2);
     vector<Symbol> remove_epsilon(const vector<Symbol> &s);
     bool is_item_line_in_item(const ItemLine &il, const vector<ItemLine> &vil);
+    Item is_item_exist(const Item &i);
 };
 
 #endif // _YACCMANAGER_H_
