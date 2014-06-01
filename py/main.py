@@ -409,8 +409,8 @@ def test():
 	nt_E = Symbol('E', 2)
 	t_plus = Symbol('+', 1)
 	t_mul = Symbol('*', 1)
-	# t_left = Symbol('(', 1)
-	# t_right = Symbol(')', 1)
+	t_left = Symbol('(', 1)
+	t_right = Symbol(')', 1)
 	t_id = Symbol('i', 1)
 
 	symbols = [
@@ -418,8 +418,8 @@ def test():
 		nt_E,
 		t_plus,
 		t_mul,
-		# t_left,
-		# t_right,
+		t_left,
+		t_right,
 		t_id
 	]
 
@@ -427,8 +427,8 @@ def test():
 		Production(0, nt_Ep, [nt_E]),
 		Production(1, nt_E, [nt_E, t_plus, nt_E]),
 		Production(2, nt_E, [nt_E, t_mul, nt_E]),
-		# Production(3, nt_E, [t_left, nt_E, t_right]),
-		Production(3, nt_E, [t_id])
+		Production(3, nt_E, [t_left, nt_E, t_right]),
+		Production(4, nt_E, [t_id])
 	]
 
 	priority = {
