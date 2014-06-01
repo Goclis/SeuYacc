@@ -528,8 +528,15 @@ void YaccManager::convert_from_front_to_manager(char *filename)
         priorities[current.name] = p;
     }
 
-    // 遍历所有产生式添加至productions，并将非终结符加至symbols
     vector<YaccFront::production> ps = yf.allProductions;
+    // 添加第一个产生式 E'->E
+    YaccFront::production p0 = ps.at(0);
+    Symbol p0l = Symbol("S'", 2);
+    vector<Symbol> right0;
+    right0.push_back(Symbol(p0.name, 2));
+    productions.push_back(Production(0, p0l, right0));
+    symbols.push_back(p0l);
+    // 遍历所有产生式添加至productions，并将非终结符加至symbols
     for (size_t i = 0; i < ps.size(); ++i) {
         YaccFront::production current = ps.at(i);
         vector<string> cr = current.items;
