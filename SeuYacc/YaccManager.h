@@ -5,7 +5,6 @@
 
 #include <vector>
 #include <string>
-#include <hash_map>
 #include <map>
 #include "Item.h"
 #include "Symbol.h"

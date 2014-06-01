@@ -1,3 +1,6 @@
+#ifndef _PRIORITY_H_
+#define _PRIORITY_H_
+
 #pragma once
 
 class Priority
@@ -10,3 +13,5 @@ public:
     Priority(int l, int lr);
     ~Priority(void);
 };
+
+#endif // _PRIORITY_H_
