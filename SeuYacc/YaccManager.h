@@ -20,32 +20,61 @@ public:
     YaccManager(void);
     ~YaccManager(void);
     
+    // 求闭包
     Item closure(Item &item);
-    Item _goto(const Item &item, const Symbol &symbol);
-    vector<Symbol> first(const Symbol &symbol);
-    vector<Symbol> first_beta_a(const vector<Symbol> &symbols);
-    void generate_items();
-    void generate_parsing_table();
-    void fix_conflict();
 
+    // goto
+    Item _goto(const Item &item, const Symbol &symbol);
+
+    // first(单个文法符号)
+    vector<Symbol> first(const Symbol &symbol);
+
+    // first(文法符号串)
+    vector<Symbol> first_beta_a(const vector<Symbol> &symbols);
+
+    // 生成所有项
+    void generate_items();
+
+    // 生成解析表，前提是已生成项
+    void generate_parsing_table();
+
+    // 解决已生成解析表中的冲突
+    void fix_conflict();
+    
+    // public setter and test_run
     void set_productions(const vector<Production> &ps);
     void set_symbols(const vector<Symbol> &ss);
     void set_priorities(const map<string, Priority> &ps);
     void test_run();
 private:
-    vector<Production> productions;
-    vector<Symbol> symbols;
-    vector<Item> items;
-    vector<map<string, int>> goto_table;
-    vector<map<string, string>> action;
-    map<string, Priority> priorities;
+    vector<Production> productions; // 产生式集合
+    vector<Symbol> symbols; // 文法符号集合
+    vector<Item> items; // 项集合
+    vector<map<string, int>> goto_table; // goto表
+    vector<map<string, string>> action; // action表
+    map<string, Priority> priorities; // 优先级关系
+    
+    /* Helper Functions */
 
+    // 判断某个文法符号是否在某文法符号集合中
     bool is_symbol_in_first_set(const vector<Symbol> &s, const Symbol &i);
+
+    // 合并两个文法符号集合，做并操作
     void merge_two_first_set(vector<Symbol> &s1, const vector<Symbol> &s2);
+
+    // 去除某文法符号集合中的epsilon符号
     vector<Symbol> remove_epsilon(const vector<Symbol> &s);
+
+    // 判断某个ItemLine是否在某个Item中
     bool is_item_line_in_item(const ItemLine &il, const vector<ItemLine> &vil);
+
+    // 判断某个Item是否已存在(于items中）
     Item is_item_exist(const Item &i);
+
+    // string + int
     string string_concat_int(const string &head, int i);
+
+    // string.split(delim)
     vector<string> string_split(const string &s, char delim);
 };
 

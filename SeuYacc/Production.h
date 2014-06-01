@@ -10,9 +10,9 @@ using namespace std;
 class Production
 {
 public:
-    int pid;
-    Symbol left;
-    vector<Symbol> right;
+    int pid; // 产生式id
+    Symbol left; // 产生式左部Symbol
+    vector<Symbol> right; // 产生式右部Symbol序列
 
     Production(int pid, Symbol &left, vector<Symbol> &right);
     ~Production(void);

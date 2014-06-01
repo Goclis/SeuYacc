@@ -20,7 +20,7 @@ public:
     Symbol(const Symbol &);
     ~Symbol(void);
 
-    bool equal(const Symbol &other) const;
+    bool equal(const Symbol &other) const; // 比较两个Symbol是否相等
 };
 
 #endif // _SYMBOL_H_
