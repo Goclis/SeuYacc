@@ -19,6 +19,9 @@ public:
     YaccManager(void);
     ~YaccManager(void);
     
+    // 读入.y文件进行解析
+    void read_from_definition_file(char *filename);
+
     // 求闭包
     Item closure(Item &item);
 
@@ -39,6 +42,9 @@ public:
 
     // 解决已生成解析表中的冲突
     void fix_conflict();
+
+    // driver
+    void run();
     
     // public setter and test_run
     void set_productions(const vector<Production> &ps);
@@ -70,11 +76,17 @@ private:
     // 判断某个Item是否已存在(于items中）
     Item is_item_exist(const Item &i);
 
+    // 判断某个Symbol是否已存在（于symbols中）
+    bool is_symbol_exsit(const Symbol &);
+
     // string + int
     string string_concat_int(const string &head, int i);
 
     // string.split(delim)
     vector<string> string_split(const string &s, char delim);
+
+    // 从YaccFront转换到YaccManger
+    void convert_from_front_to_manager(char *);
 };
 
 #endif // _YACCMANAGER_H_

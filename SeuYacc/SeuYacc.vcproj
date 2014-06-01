@@ -195,6 +195,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\YaccFront.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\YaccManager.cpp"
 				>
 			</File>
@@ -222,6 +226,10 @@
 			</File>
 			<File
 				RelativePath=".\Symbol.h"
+				>
+			</File>
+			<File
+				RelativePath=".\YaccFront.h"
 				>
 			</File>
 			<File

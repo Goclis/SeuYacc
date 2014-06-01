@@ -92,12 +92,12 @@ int main(int argc, char **argv)
     priorities["+"] = Priority(1, 0);
     priorities["*"] = Priority(2, 0);
     
-    ym.set_symbols(ss);
-    ym.set_productions(ps);
-    ym.set_priorities(priorities);
+//     ym.set_symbols(ss);
+//     ym.set_productions(ps);
+//     ym.set_priorities(priorities);
     
     
-    ym.test_run();
+    ym.run();
 
     return 0;
 }

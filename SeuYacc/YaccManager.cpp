@@ -1,4 +1,5 @@
 #include "YaccManager.h"
+#include "YaccFront.h"
 #include <iostream>
 #include <sstream>
 #include <queue>
@@ -129,6 +130,16 @@ vector<string> YaccManager::string_split(const string &s, char delim)
         result.push_back(item);
     }
     return result;
+}
+
+/*
+ * 判断某个Symbol是否已存在（于symbols中）
+ * @s : Symbol
+ * @return : bool
+ */
+bool YaccManager::is_symbol_exsit(const Symbol &s)
+{
+    return is_symbol_in_first_set(symbols, s);
 }
 
 /************ Helper Function End **************/
@@ -490,6 +501,74 @@ void YaccManager::fix_conflict()
             }
         }
     }
+}
+
+/*
+ * 调用YaccFront进行解析，并转换出来
+ */
+void YaccManager::convert_from_front_to_manager(char *filename)
+{
+    YaccFront yf;
+    yf.readFromDefFile(filename); // 读取解析
+
+    // 转换
+    // 将allTokens转换为Symbol里的terminal
+    vector<string> tokens = yf.allTokens;
+    for (size_t i = 0; i < tokens.size(); i++) {
+        symbols.push_back(Symbol(tokens.at(i), 1));
+    }
+    // 将allOperators转换成priorities
+    vector<YaccFront::LeftOrRightOperator> operators = yf.allOperators;
+    for (size_t i = 0; i < operators.size(); ++i) {
+        YaccFront::LeftOrRightOperator current = operators.at(i);
+        Priority p;
+        p.lr = (current.leftOrRight == 'l' ? 0 : 1);
+        p.level = current.priority;
+
+        priorities[current.name] = p;
+    }
+
+    // 遍历所有产生式添加至productions，并将非终结符加至symbols
+    vector<YaccFront::production> ps = yf.allProductions;
+    for (size_t i = 0; i < ps.size(); ++i) {
+        YaccFront::production current = ps.at(i);
+        vector<string> cr = current.items;
+        Symbol left = Symbol(current.name, 2);
+        if (!is_symbol_exsit(left)) {
+            symbols.push_back(left);
+        }
+        vector<Symbol> right;
+        // 遍历production的右部，找寻非终结符，并同时将其加至right
+        if (cr.size() == 0) {
+            // epsilon
+            right.push_back(Symbol("epsilon", 0));
+        } else {
+            for (size_t ri = 0; ri < cr.size(); ++ri) {
+                Symbol maybe_new(cr.at(ri), 1); // 先假设为终结符
+                if (is_symbol_exsit(maybe_new)) {
+                    // 存在该终结符（如果是则一定存在，因为所有终结符已经存在于symbols中）
+                    right.push_back(maybe_new);
+                    continue;
+                }
+
+                maybe_new.type = 2; // 为非终结符
+                if (!is_symbol_exsit(maybe_new)) {
+                    // 不存在该非终结符，添加新的非终结符
+                    symbols.push_back(maybe_new);
+                }
+                right.push_back(maybe_new);
+            }
+        }
+        productions.push_back(Production(productions.size(), left, right));
+    }
+}
+
+/*
+ * 总的驱动函数，负责完成从YaccFront的转换并调用各方法
+ */
+void YaccManager::run()
+{
+    convert_from_front_to_manager("GrammarDefinition.y");
 }
 
 /*
