@@ -21,16 +21,16 @@ public:
     ~YaccManager(void);
     
     Item closure(Item &item);
-    Item _goto(Item &item, Symbol &symbol);
-    vector<Symbol> first(Symbol &symbol);
-    vector<Symbol> first_beta_a(vector<Symbol> &symbols);
+    Item _goto(const Item &item, const Symbol &symbol);
+    vector<Symbol> first(const Symbol &symbol);
+    vector<Symbol> first_beta_a(const vector<Symbol> &symbols);
     void generate_items();
     void generate_parsing_table();
     void fix_conflict();
 
-    void set_productions(vector<Production> &ps);
-    void set_symbols(vector<Symbol> &ss);
-    void set_priorities(map<string, Priority> &ps);
+    void set_productions(const vector<Production> &ps);
+    void set_symbols(const vector<Symbol> &ss);
+    void set_priorities(const map<string, Priority> &ps);
     void test_run();
 private:
     vector<Production> productions;
@@ -45,8 +45,8 @@ private:
     vector<Symbol> remove_epsilon(const vector<Symbol> &s);
     bool is_item_line_in_item(const ItemLine &il, const vector<ItemLine> &vil);
     Item is_item_exist(const Item &i);
-    string string_concat_int(string &head, int i);
-    vector<string> string_split(string &s, char delim);
+    string string_concat_int(const string &head, int i);
+    vector<string> string_split(const string &s, char delim);
 };
 
 #endif // _YACCMANAGER_H_

@@ -86,7 +86,7 @@ bool YaccManager::is_item_line_in_item(const ItemLine &il, const vector<ItemLine
 }
 
 /*
- * 判断某个Item是否已存在
+ * 判断某个Item是否已存在于items中
  * @i : Item
  * @return : Item 已存在则返回存在的Item，否则返回id为-1的Item
  */
@@ -107,14 +107,20 @@ Item YaccManager::is_item_exist(const Item &it)
  * @i : int
  * @return : string
  */
-string YaccManager::string_concat_int(string &head, int i)
+string YaccManager::string_concat_int(const string &head, int i)
 {
     stringstream sstm;
     sstm << head << i;
     return sstm.str();
 }
 
-vector<string> YaccManager::string_split(string &s, char delim)
+/*
+ * string.split
+ * @s : string
+ * @delim : char 分隔符
+ * @return : vector<string>
+ */
+vector<string> YaccManager::string_split(const string &s, char delim)
 {
     stringstream sstm(s);
     string item;
@@ -134,7 +140,7 @@ vector<string> YaccManager::string_split(string &s, char delim)
  * @symbol : Symbol
  * @return : vector<Symbol>
  */
-vector<Symbol> YaccManager::first(Symbol &symbol)
+vector<Symbol> YaccManager::first(const Symbol &symbol)
 {
     int s_type = symbol.type;
     vector<Symbol> result;
@@ -171,7 +177,7 @@ vector<Symbol> YaccManager::first(Symbol &symbol)
  * @symbols : vector<Symbol>
  * @return : vector<Symbol>
  */
-vector<Symbol> YaccManager::first_beta_a(vector<Symbol> &symbols)
+vector<Symbol> YaccManager::first_beta_a(const vector<Symbol> &symbols)
 {
     vector<Symbol> result;
     
@@ -273,7 +279,7 @@ Item YaccManager::closure(Item &item)
  * @symbol : Symbol
  * @return : Item
  */
-Item YaccManager::_goto(Item &item, Symbol &symbol)
+Item YaccManager::_goto(const Item &item, const Symbol &symbol)
 {
     vector<ItemLine> item_lines = item.item_lines;
     Item new_Item((int) items.size());
@@ -491,7 +497,7 @@ void YaccManager::fix_conflict()
  * @ps : vector<Production>
  * @return : void
  */
-void YaccManager::set_productions(vector<Production> &ps)
+void YaccManager::set_productions(const vector<Production> &ps)
 {
     this->productions = ps;
 }
@@ -501,7 +507,7 @@ void YaccManager::set_productions(vector<Production> &ps)
  * @ss : vector<Symbol>
  * @return : void
  */
-void YaccManager::set_symbols(vector<Symbol> &ss)
+void YaccManager::set_symbols(const vector<Symbol> &ss)
 {
     this->symbols = ss;
 }
@@ -511,7 +517,7 @@ void YaccManager::set_symbols(vector<Symbol> &ss)
  * @ps : map<string, Priority>
  * @return : void
  */
-void YaccManager::set_priorities(map<string, Priority> &ps)
+void YaccManager::set_priorities(const map<string, Priority> &ps)
 {
     priorities = ps;
 }
