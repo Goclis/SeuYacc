@@ -678,14 +678,18 @@ void YaccManager::test_run()
     generate_parsing_table();
     fix_conflict();
     size_t l = items.size();
+
+	cout << "map<string, string> action;" << endl;
+
     for (size_t i = 0; i < l; i++) {
         map<string, string> ca = action.at(i);
 
         map<string, string>::iterator it = ca.begin();
         for (; it != ca.end(); ++it) {
-            cout << "(" << it->first << ", " << it->second << ")" << endl;
+            //cout << "(" << it->first << ", " << it->second << ")" << endl;
+			cout << "action[\"" << it->first << "\"] = " << it->second << ";" << endl;
         }
-
+		
         cout << endl;
     }
 }

@@ -12,8 +12,7 @@ YaccFront::~YaccFront(void)
 /*
  * 这个函数主要是读入按照.y的语法格式定义的文法文件
  * getline函数读取一行文件
- * strcmp比较两个字符串，如果完全相同则返回0+		[16]	{name="parameterlist" items={ size=3 } }	production
-
+ * strcmp比较两个字符串，如果完全相同则返回0
  * strtok以第二个参数分割字符串，返回所有到分隔符前的接受的字符，\
  * 同时有一个默认全局变量记录当前位置，所以可以用strtok(NULL,char*)
  */
