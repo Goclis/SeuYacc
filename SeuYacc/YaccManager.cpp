@@ -570,6 +570,12 @@ void YaccManager::convert_from_front_to_manager(char *filename)
     }
 }
 
+
+void YaccManager::generate_code()
+{
+    
+}
+
 /*
  * 总的驱动函数，负责完成从YaccFront的转换并调用各方法
  */

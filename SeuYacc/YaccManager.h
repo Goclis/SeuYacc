@@ -43,6 +43,8 @@ public:
     // 解决已生成解析表中的冲突
     void fix_conflict();
 
+    void generate_code();
+
     // driver
     void run();
     
