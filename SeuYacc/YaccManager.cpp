@@ -664,15 +664,15 @@ void YaccManager::test_run()
         for (size_t k = 0; k < rs_ils.size(); k++) {
              ItemLine tmp_rs = rs_ils.at(k);
              Production p = productions[tmp_rs.pid];
-             cout << p.left.value << " -> ";
+             //cout << p.left.value << " -> ";
              vector<Symbol> right = p.right;
              for (size_t j = 0; j < right.size(); j++) {
-                 cout << right.at(j).value << "";
+                 //cout << right.at(j).value << "";
              }
              //cout << ", " << tmp_rs.dot_pos << ", " << tmp_rs.lookahead.value << endl;
         }
 
-        cout << endl;
+        //cout << endl;
     }
 
     generate_parsing_table();
@@ -709,20 +709,30 @@ void YaccManager::test_run()
 	}
 	cout << output1.str() << output2.str();
 	cout << "vector<map<string, string>> action;\n";
+	cout << "map<string, string> actionItem;\n";
 	for (size_t i = 0; i < action.size(); i++) {
-		map<string, string> ca = action.at(i);
-		map<string, string>::iterator it = ca.begin();
-		for (; it != ca.end(); ++it) {
-			cout << "action.at(" << i << ")[\"" << it->first << "\"] = \"" << it->second << "\";" << endl;
-		}
+		//if (!action.at(i).empty()) {
+			map<string, string> ca = action.at(i);
+			//cout << "map<string, string> actionItem;\n";
+			cout << "action.push_back(actionItem);\n";
+			map<string, string>::iterator it = ca.begin();
+			for (; it != ca.end(); ++it) {
+				cout << "action.at(" << i << ")[\"" << it->first << "\"] = \"" << it->second << "\";" << endl;
+			}
+		//}
 	}
 	cout << "vector<map<string, int>> goto_table;\n";
+	cout << "map<string, int> gotoItem;\n";
 	for (int i = 0; i < goto_table.size(); ++i) {
-		map<string, int> line = goto_table.at(i);
-		map<string, int>::iterator it = line.begin();
-		for (; it != line.end(); ++it) {
-			cout << "goto_table.at(" << i <<")[\"" << it->first << "\"] = " << it->second << ";" << endl;
-		}
+		//if (!goto_table.at(i).empty()) {
+			map<string, int> line = goto_table.at(i);
+			//cout << "map<string, int> gotoItem;\n";
+			cout << "goto_table.push_back(gotoItem);\n";
+			map<string, int>::iterator it = line.begin();
+			for (; it != line.end(); ++it) {
+				cout << "goto_table.at(" << i << ")[\"" << it->first << "\"] = " << it->second << ";" << endl;
+			}
+		//}
 	}
 	string code = "";
 	code = code +
