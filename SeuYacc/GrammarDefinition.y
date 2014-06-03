@@ -9,7 +9,7 @@ using namespace std;
 
 %}
 
-%token ,
+%token , + - * / > < ; { } ( )
 %token IDENTIFIER NUMBER PROT
 %token INT VOID UNION STATIC STRUCT AUTO ENUM BREAK CONST CONTINUE
 %token DO FOR WHILE IF ELSE EXTERN REGISTER RETURN SIZEOF TYPEDEF
@@ -20,7 +20,6 @@ using namespace std;
 %left '>' '<' NE_OP EQ_OP
 %left '+' '-'
 %left '*' '/'
-%right '-'
 
 %%
 program : declarations
@@ -88,7 +87,6 @@ exp : exp + exp
     | exp - exp
     | exp / exp
     | exp * exp
-    | - exp
     | ( exp )
     | IDENTIFIER
     | IDENTIFIER ( args )

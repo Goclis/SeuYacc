@@ -334,12 +334,26 @@ void YaccManager::generate_items()
 
             if (next_item.item_lines.size()) { // item_lines不为空，说明生成了Item
                 Item check = is_item_exist(next_item); // 检查Item是否已存在
-                
+
                 int t_id; // goto table使用的id
                 if (check.item_id == -1) {
                     items.push_back(next_item);
                     item_queue.push(next_item);
                     t_id = next_item.item_id;
+
+					// print new item
+					cout << "New Item " << next_item.item_id << endl;
+					vector<ItemLine> ils = next_item.item_lines;
+					for (size_t k = 0; k < ils.size(); k++) {
+						ItemLine tmp_rs = ils.at(k);
+						Production p = productions[tmp_rs.pid];
+						cout << p.left.value << " -> ";
+						vector<Symbol> right = p.right;
+						for (size_t j = 0; j < right.size(); j++) {
+							cout << right.at(j).value << " ";
+						}
+						cout << ", " << tmp_rs.dot_pos << ", " << tmp_rs.lookahead.value << endl;
+					}
                 } else {
                     t_id = check.item_id;
                 }
@@ -570,18 +584,14 @@ void YaccManager::convert_from_front_to_manager(char *filename)
     }
 }
 
-
-void YaccManager::generate_code()
-{
-    
-}
-
 /*
  * 总的驱动函数，负责完成从YaccFront的转换并调用各方法
  */
 void YaccManager::run()
 {
     convert_from_front_to_manager("GrammarDefinition.y");
+	generate_items();
+	generate_parsing_table();
 }
 
 /*
@@ -659,11 +669,11 @@ void YaccManager::test_run()
 //     items.push_back(start_item);
 
     
-
+	convert_from_front_to_manager("GrammarDefinition.y");
     // test generate_items
     generate_items();
 
-    for (size_t i = 0; i < items.size(); i++) {
+    /*for (size_t i = 0; i < items.size(); i++) {
         Item ri = items.at(i);
         vector<ItemLine> rs_ils = ri.item_lines;
 
@@ -673,29 +683,147 @@ void YaccManager::test_run()
              cout << p.left.value << " -> ";
              vector<Symbol> right = p.right;
              for (size_t j = 0; j < right.size(); j++) {
-                 cout << right.at(j).value << "";
+                 cout << right.at(j).value << " ";
              }
              cout << ", " << tmp_rs.dot_pos << ", " << tmp_rs.lookahead.value << endl;
         }
 
         cout << endl;
-    }
+    }*/
 
     generate_parsing_table();
     fix_conflict();
-    size_t l = items.size();
 
-	cout << "map<string, string> action;" << endl;
+	cout << "\n" << "Finished" << endl;
+//     size_t l = items.size();
+//     
+// 	cout << "map<string, string> action;" << endl;
+//         
+//     for (size_t i = 0; i < l; i++) {
+//         map<string, string> ca = action.at(i);
+// 
+//         map<string, string>::iterator it = ca.begin();
+//         for (; it != ca.end(); ++it) {
+//             cout << "(" << it->first << ", " << it->second << ")" << endl;
+// 			cout << "action[\"" << it->first << "\"] = " << it->second << ";" << endl;
+//         }
+// 		
+//         cout << endl;
+//     }
 
-    for (size_t i = 0; i < l; i++) {
-        map<string, string> ca = action.at(i);
-
-        map<string, string>::iterator it = ca.begin();
-        for (; it != ca.end(); ++it) {
-            //cout << "(" << it->first << ", " << it->second << ")" << endl;
-			cout << "action[\"" << it->first << "\"] = " << it->second << ";" << endl;
-        }
-		
-        cout << endl;
-    }
+	/* 生成产生式的左部和右部数量vector */
+// 	stringstream output1, output2;
+// 	vector<string> production_left;
+// 	output1 << "vector<string> production_left;\n";
+// 	vector<int> production_right_symbol_nums;
+// 	output2 << "vector<int> production_right_symbol_nums;\n";
+// 	// 遍历productions，保存相应值到vector中
+// 	for (size_t i = 0; i < productions.size(); ++i) {
+// 		Production current = productions.at(i);
+// 		output1 << "production_left.push_back(\"" << current.left.value << "\");\n";
+// 		output2 << "production_right_symbol_nums.push_back(" << current.right.size() << ");\n";
+// 	}
+// 	cout << output1.str() << output2.str();
+// 	cout << "vector<map<string, string>> action;\n";
+// 	cout << "map<string, string> actionItem;\n";
+// 	for (size_t i = 0; i < action.size(); i++) {
+// 		//if (!action.at(i).empty()) {
+// 			map<string, string> ca = action.at(i);
+// 			//cout << "map<string, string> actionItem;\n";
+// 			cout << "action.push_back(actionItem);\n";
+// 			map<string, string>::iterator it = ca.begin();
+// 			for (; it != ca.end(); ++it) {
+// 				cout << "action.at(" << i << ")[\"" << it->first << "\"] = \"" << it->second << "\";" << endl;
+// 			}
+// 		//}
+// 	}
+// 	cout << "vector<map<string, int>> goto_table;\n";
+// 	cout << "map<string, int> gotoItem;\n";
+// 	for (int i = 0; i < goto_table.size(); ++i) {
+// 		//if (!goto_table.at(i).empty()) {
+// 			map<string, int> line = goto_table.at(i);
+// 			//cout << "map<string, int> gotoItem;\n";
+// 			cout << "goto_table.push_back(gotoItem);\n";
+// 			map<string, int>::iterator it = line.begin();
+// 			for (; it != line.end(); ++it) {
+// 				cout << "goto_table.at(" << i << ")[\"" << it->first << "\"] = " << it->second << ";" << endl;
+// 			}
+// 		//}
+// 	}
+// 	string code = "";
+// 	code = code +
+// 		/* token序列文件的读入流 */
+// 		"ifstream dotTknFile;\n"
+// 		"dotTknFile.open(\"token.tkn\", ios::in);\n"
+// 		"\n"
+// 		/* PDA的相关结构和初始化 */
+// 		"vector<string> symbolStack;\n"
+// 		"symbolStack.push_back(\"$\");\n"
+// 		"vector<int > stateStack;\n"
+// 		"stateStack.push_back(0);\n"
+// 		"\n"
+// 		/* 用于解析.tkn文件的一些cstring, 包括读头 */
+// 		"int buffersize = 512;\n"
+// 		"char *tmpCstr = new char[buffersize];\n"
+// 		"char *readPointer = new char[buffersize];\n"
+// 		"\n"
+// 		/* 开始读入.tkn文件, 按照.tkn定义,读头应该是每行的第二个元素 */
+// 		"dotTknFile.getline(tmpCstr, buffersize);\n"
+// 		"char *splitChar = \" \"; \n"
+// 		"readPointer = strtok(tmpCstr, splitChar);\n"
+// 		"readPointer = strtok(NULL, splitChar);\n"
+// 		"\n"
+// 		/* 具体的自动机过程 */
+// 		"while(strcmp(tmpCstr, \"$\") != 0 && !symbolStack.empty()) {\n"
+// 		"	int currentState = stateStack.at(stateStack.size() - 1);	\n"
+// 		/* goto操作 */
+// 		"	if(goto_table.at(currentState)[readPointer] != NULL) {\n"
+// 		"		stateStack.push_back(goto_table.at(currentState)[readPointer][readPointer]);\n"
+// 		"	}\n"
+// 		/* action操作 */
+// 		"	else if (action.at(currentState)[readPointer] != \"\") {\n"
+// 		/* 得到action的sn或rn的n(int) */
+// 		"		stringstream ss;\n"
+// 		"		string actionStr;\n"
+// 		"		int production_num;\n"
+// 		"		for (int i = 1; i < action.at(currentState)[readPointer].size(); ++i) {\n"
+// 		"			actionStr += action.at(currentState)[readPointer][i];\n"
+// 		"		}\n"
+// 		"		int actionNum;\n"
+// 		"		ss << actionStr;\n"
+// 		"		ss >> actionNum;\n"
+// 		/* 对于sn的移入操作,即状态转换,符号进栈,读头前进 */
+// 		"		if(action.at(currentState)[readPointer][0] == 's') {\n"
+// 		"			stateStack.push_back(actionNum);\n"
+// 		"			symbolStack.push_back(readPointer);\n"
+// 		"			dotTknFile.getline(tmpCstr, buffersize);\n"
+// 		"			readPointer = strtok(tmpCstr, splitChar);\n"
+// 		"			readPointer = strtok(NULL, splitChar);\n"
+// 		"		}\n"
+// 		/* 对于rn的规约操作,即状态出栈,符号出栈,产生式左部进栈 */
+// 		"		else if (action.at(currentState)[readPointer][0] == 'r') {\n"
+// 		"			for (int i = 0; i < production_right_symbol_nums[actionNum]; ++i) {\n"
+// 		"				symbolStack.pop_back();\n"
+// 		"				stateStack.pop_back();\n"
+// 		"			}\n"
+// 		"			symbolStack.push_back(production_left[actionNum]);\n"
+// 		"		}\n"
+// 		/* accept */
+// 		"		else if (action.at(currentState)[readPointer][0] == 'a') {\n"
+// 		"			cout << \"accept\" << endl;\n"
+// 		"			return 1;\n"
+// 		"		}\n"
+// 		/* 不是上面的情况则出错 */
+// 		"		else {\n"
+// 		"			cout << \"error\" << endl;\n"
+// 		"			return -1;\n"
+// 		"		}\n"
+// 		"	}\n"
+// 		/* 不是上面的情况则出错 */
+// 		"	else {\n"
+// 		"		cout << \"error\" << endl;\n"
+// 		"		return -1;\n"
+// 		"	}\n"
+// 		"}\n";
+// 	cout << code;
 }
