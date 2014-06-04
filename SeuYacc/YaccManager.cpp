@@ -198,30 +198,40 @@ vector<Symbol> YaccManager::first(const Symbol &symbol)
 {
     int s_type = symbol.type;
     vector<Symbol> result;
-    
+
     if (s_type == 2) { // nonterminal
-        // 遍历产生式
-        for (size_t i = 0; i < productions.size(); i++) {
-            Production current_production = productions.at(i);
-            if (current_production.left.equal(symbol)) { // 产生式左部为symbol
-                vector<Symbol> right = current_production.right;
+		// 遍历一遍产生式，将可添加的先添加了（右部为空或开头为终结符的）
+		for (size_t i = 0; i < productions.size(); i++) {
+			Production current_production = productions.at(i);
+
+			if (current_production.left.equal(symbol)) { // 产生式左部为symbol
+				vector<Symbol> right = current_production.right;
 
 				if (right.size() == 0) {
-					// epsilon
 					if (!is_symbol_in_first_set(result, Symbol("epsilon", 0))) {
 						result.push_back(Symbol("epsilon", 0));
 					}
-				} else {
-					Symbol right0 = right.at(0);
-					if (right0.equal(symbol)) {
-						// 类似A->Aa，忽略
-					} else {
-						vector<Symbol> right_first = first_beta_a(right);  
-						merge_two_first_set(result, right_first);
+				} else if (right.at(0).type == 1) { // 开头是非终结符
+					if (!is_symbol_in_first_set(result, right.at(0))) {
+						result.push_back(right.at(0));
 					}
 				}
-            }
-        }
+			}
+		}
+
+		// 再遍历一遍，只管右部开头为非终结符的
+		for (size_t i = 0; i < productions.size(); i++) {
+			Production current_production = productions.at(i);
+
+			if (current_production.left.equal(symbol)) { // 产生式左部为symbol
+				vector<Symbol> right = current_production.right;
+
+				if (right.size() != 0 && right.at(0).type == 2) {
+					vector<Symbol> right_first = first_beta_a(right);
+					merge_two_first_set(result, right_first);
+				}
+			}
+		}
     } else {
         result.push_back(symbol);
     }
@@ -900,7 +910,7 @@ void YaccManager::test_run()
 	log_file = of.rdbuf();
 	cout.rdbuf(log_file);
     
-	convert_from_front_to_manager("GrammarDefinition2.y");
+	convert_from_front_to_manager("GrammarDefinition.y");
 	// convert_from_front_to_manager("test.y");
     // test generate_items
     generate_items();
@@ -914,5 +924,4 @@ void YaccManager::test_run()
 	log_file = NULL;
 	cout.rdbuf(cout_buf);
 	cout << "Finished" << endl;
-	
 }
