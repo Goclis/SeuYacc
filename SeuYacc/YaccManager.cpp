@@ -865,7 +865,7 @@ void YaccManager::set_priorities(const map<string, Priority> &ps)
 void YaccManager::test_run()
 {
     // test first_beta_a
-//     vector<Symbol> rs = first_beta_a(productions.at(0).right);
+//     vector<Symbol> rs = first(symbols.at(0));
 // 
 //     for (size_t i = 0; i < rs.size(); i++) {
 //         Symbol crs = rs.at(i);

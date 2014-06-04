@@ -9,32 +9,32 @@ using namespace std;
 int main(int argc, char **argv)
 {
     YaccManager ym;
-    vector<Symbol> ss;
-    vector<Production> ps;
-    
+//     vector<Symbol> ss;
+//     vector<Production> ps;
+//     
 //     Symbol nt_A("A", 2);
 //     Symbol nt_B("B", 2);
 //     Symbol t_a("a", 1);
 //     Symbol t_c("c", 1);
-//     Symbol epsilon("epsilon", 0);
 //     ss.push_back(nt_A);
 //     ss.push_back(nt_B);
 //     ss.push_back(t_a);
 //     ss.push_back(t_c);
-//     ss.push_back(epsilon);
-// 
+// 	
+// 	// A->aA
 //     vector<Symbol> r0;
 //     r0.push_back(t_a);
 //     r0.push_back(nt_A);
 //     Production p0(0, nt_A, r0);
-// 
+// 	
+// 	// A->Bc
 //     vector<Symbol> r1;
 //     r1.push_back(nt_B);
 //     r1.push_back(t_c);
 //     Production p1(1, nt_A, r1);
-// 
+// 	
+// 	// B->e
 //     vector<Symbol> r2;
-//     r2.push_back(epsilon);
 //     Production p2(2, nt_B, r2);
 // 
 //     ps.push_back(p0);
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
     
 //     ym.set_symbols(ss);
 //     ym.set_productions(ps);
-//     ym.set_priorities(priorities);
+    // ym.set_priorities(priorities);
     
     
     //ym.run();
