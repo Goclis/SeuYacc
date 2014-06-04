@@ -227,8 +227,52 @@ vector<Symbol> YaccManager::first(const Symbol &symbol)
 				vector<Symbol> right = current_production.right;
 
 				if (right.size() != 0 && right.at(0).type == 2) {
-					vector<Symbol> right_first = first_beta_a(right);
-					merge_two_first_set(result, right_first);
+					vector<Symbol> before_first;
+					// 遍历right，扩充result
+					for (size_t ri = 0; ri < right.size(); ++ri) {
+						Symbol current_right = right.at(ri);
+
+						if (current_right.equal(symbol)) { // 遇到待求的Symbol
+							if (!is_symbol_in_first_set(result, Symbol("epsilon", 0))) {
+								// 不存在epsilon，后面的无法继续了
+								break;
+							} else {
+								before_first = result;
+							}
+						} else if (current_right.type == 1) { // 遇到终结符
+							if (is_symbol_in_first_set(before_first, Symbol("epsilon", 0))) {
+								// 之前的那个符号的first集中有epsilon
+								if (!is_symbol_in_first_set(result, current_right)) {
+									result.push_back(current_right); // 这是最后一个
+								}
+							} 
+
+							break; // 终结符不管什么情况都该break了
+						} else { // 非终结符
+							if (ri == 0) {
+								before_first = first(current_right);
+								if (ri == right.size() - 1) {
+									// 末尾了，如果当前非终结符有epsilon，则左部也包含，不需要过滤
+									merge_two_first_set(result, before_first);
+								} else {
+									merge_two_first_set(result, remove_epsilon(before_first));
+								}
+							} else if (is_symbol_in_first_set(before_first, Symbol("epsilon", 0))) {
+								// 之前的那个符号的first集中有epsilon
+								before_first = first(current_right); // 更新before_first集
+
+								if (ri == right.size() - 1) {
+									// 末尾了，如果当前非终结符有epsilon，则左部也包含，不需要过滤
+									merge_two_first_set(result, before_first);
+								} else {
+									merge_two_first_set(result, remove_epsilon(before_first));
+								}
+							} else {
+								break;
+							}
+						}
+					}
+					
 				}
 			}
 		}
@@ -246,33 +290,63 @@ vector<Symbol> YaccManager::first(const Symbol &symbol)
  */
 vector<Symbol> YaccManager::first_beta_a(const vector<Symbol> &symbols)
 {
-    vector<Symbol> result;
-    
+    vector<Symbol> result, before_first;
+
     // 遍历symbols中的每一个符号
     for (size_t i = 0; i < symbols.size(); i++) {
         Symbol current_symbol = symbols.at(i);
         int type = current_symbol.type;
+		
+		if (i == 0) {
+			// 第一个元素特殊处理
+			before_first = first(current_symbol);
+			merge_two_first_set(result, remove_epsilon(before_first)); // 因为返回的集合肯定不包含epsilon，所以直接过滤掉
+		} else {
+			if (type == 1) {
+				// 检查before_first中是否有epsilon
+				if (is_symbol_in_first_set(before_first, Symbol("epsilon", 0))) {
+					if (!is_symbol_in_first_set(result, current_symbol)) {
+						result.push_back(current_symbol); // 如果result中不存在则压入
+					}
+				} 
+				break; // 无论有没有都结束（因为是终结符）
+			} else {
+				// 非终结符的处理
+				// 检查before_first是否有epsilon
+				if (is_symbol_in_first_set(before_first, Symbol("epsilon", 0))) {
+					// 存在则更新before_first
+					before_first = first(current_symbol);
+					merge_two_first_set(result, remove_epsilon(before_first));
+				} else {
+					break;
+				}
+			}
+		}
 
-        if (type == 1) {
-            // 检查 0 ~ i-1 是否有epsilon，只要有一个没有就直接返回result
-            Symbol epsilon("epsilon", 0);
-            for (size_t bs = 0; bs < i; bs++) {
-                if (!is_symbol_in_first_set(first(symbols.at(bs)), epsilon)) {
-                    return result;
-                }
-            }
-            result.push_back(current_symbol);
-            return remove_epsilon(result);
-        } else if (type == 2) {
-            // 检查 0 ~ i-1 是否有epsilon，只要有一个没有就直接返回result
-            Symbol epsilon("epsilon", 0);
-            for (size_t bs = 0; bs < i; bs++) {
-                if (!is_symbol_in_first_set(first(symbols.at(bs)), epsilon)) {
-                    return remove_epsilon(result);
-                }
-            }
-            merge_two_first_set(result, first(current_symbol));
-        }
+// 		if (type == 1) {
+// 			// 
+// 		}
+// 
+//         if (type == 1) {
+//             // 检查 0 ~ i-1 是否有epsilon，只要有一个没有就直接返回result
+//             Symbol epsilon("epsilon", 0);
+//             for (size_t bs = 0; bs < i; bs++) {
+//                 if (!is_symbol_in_first_set(first(symbols.at(bs)), epsilon)) {
+//                     return result;
+//                 }
+//             }
+//             result.push_back(current_symbol);
+//             return remove_epsilon(result);
+//         } else if (type == 2) {
+//             // 检查 0 ~ i-1 是否有epsilon，只要有一个没有就直接返回result
+//             Symbol epsilon("epsilon", 0);
+//             for (size_t bs = 0; bs < i; bs++) {
+//                 if (!is_symbol_in_first_set(first(symbols.at(bs)), epsilon)) {
+//                     return remove_epsilon(result);
+//                 }
+//             }
+//             merge_two_first_set(result, first(current_symbol));
+//         }
     }
 
     return remove_epsilon(result);
@@ -578,7 +652,7 @@ void YaccManager::fix_conflict()
                 
                 if (symbol_inside.value == "epsilon") {
                     // A->·，此类暂不处理 = =#不知道怎么弄优先级
-					cout << "Ignored\n" << endl;
+					cout << "Ignored with out " << conflict_symbol_value << "\n" << endl;
                 } else {
                     if (inside_priority.level > outside_priority.level) { // 内部优先级高
                         // 规约
@@ -865,7 +939,7 @@ void YaccManager::set_priorities(const map<string, Priority> &ps)
 void YaccManager::test_run()
 {
     // test first_beta_a
-//     vector<Symbol> rs = first(symbols.at(0));
+//     vector<Symbol> rs = first_beta_a(productions.at(0).right);
 // 
 //     for (size_t i = 0; i < rs.size(); i++) {
 //         Symbol crs = rs.at(i);
@@ -909,10 +983,22 @@ void YaccManager::test_run()
 	streambuf *cout_buf = cout.rdbuf(); // backup
 	log_file = of.rdbuf();
 	cout.rdbuf(log_file);
-    
+//     
 	convert_from_front_to_manager("GrammarDefinition.y");
-	// convert_from_front_to_manager("test.y");
-    // test generate_items
+	// 遍历产生first
+// 	for (size_t i = 0; i < symbols.size(); i++) {
+// 		Symbol current = symbols.at(i);
+// 		cout << "First(" << current.value << ") = {";
+// 		vector<Symbol> rs = first(current);
+// 		for (size_t j = 0; j < rs.size(); ++j) {
+// 			cout << rs.at(j).value << ", ";
+// 		}
+// 		cout << "}\n" << endl;
+// 	}
+	//first(Symbol("statements", 2));
+
+// 	// convert_from_front_to_manager("test.y");
+//     // test generate_items
     generate_items();
 
     generate_parsing_table();

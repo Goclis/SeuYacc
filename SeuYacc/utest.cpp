@@ -21,10 +21,10 @@ int main(int argc, char **argv)
 //     ss.push_back(t_a);
 //     ss.push_back(t_c);
 // 	
-// 	// A->aA
+// 	// A->Aa
 //     vector<Symbol> r0;
+// 	r0.push_back(nt_A);
 //     r0.push_back(t_a);
-//     r0.push_back(nt_A);
 //     Production p0(0, nt_A, r0);
 // 	
 // 	// A->Bc
@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 //     Production p1(1, nt_A, r1);
 // 	
 // 	// B->e
-//     vector<Symbol> r2;
+//     vector<Symbol> r2(0);
 //     Production p2(2, nt_B, r2);
 // 
 //     ps.push_back(p0);
