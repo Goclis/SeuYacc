@@ -1,14 +1,15 @@
-#include "YaccManager.h"
+ï»¿#include "YaccManager.h"
 #include "YaccFront.h"
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <queue>
 
 using namespace std;
 
 YaccManager::YaccManager(void)
 {
-    // TODO: ¶¯Ì¬À©Õ¹goto_tableºÍactionµÄ´óĞ¡£¬ÕâÀï¶¨ËÀÁË¡£
+    // TODO: åŠ¨æ€æ‰©å±•goto_tableå’Œactionçš„å¤§å°ï¼Œè¿™é‡Œå®šæ­»äº†ã€‚
     goto_table = vector<map<string, int>>(1000);
     action = vector<map<string, string>>(1000);
 }
@@ -20,9 +21,9 @@ YaccManager::~YaccManager(void)
 /************ Helper Function Begin **************/
 
 /*
- * ¼ì²éÄ³¸öÎÄ·¨·ûºÅÊÇ·ñÒÑÔÚÒ»¸öÎÄ·¨·ûºÅ¼¯ºÏÖĞ
- * @ss : vector<Symbol> ÎÄ·¨·ûºÅ¼¯ºÏ
- * @s : Symbol ´ı¼ì²éÎÄ·¨·ûºÅ
+ * æ£€æŸ¥æŸä¸ªæ–‡æ³•ç¬¦å·æ˜¯å¦å·²åœ¨ä¸€ä¸ªæ–‡æ³•ç¬¦å·é›†åˆä¸­
+ * @ss : vector<Symbol> æ–‡æ³•ç¬¦å·é›†åˆ
+ * @s : Symbol å¾…æ£€æŸ¥æ–‡æ³•ç¬¦å·
  * @return : bool
  */
 bool YaccManager::is_symbol_in_first_set(const vector<Symbol> &ss, const Symbol &s)
@@ -37,7 +38,7 @@ bool YaccManager::is_symbol_in_first_set(const vector<Symbol> &ss, const Symbol 
 }
 
 /*
- * ºÏ²¢Á½¸öfirst¼¯ºÏ£¬Çó²¢¼¯£¬½á¹û±£´æÔÚµÚÒ»¸öÖĞ
+ * åˆå¹¶ä¸¤ä¸ªfirsté›†åˆï¼Œæ±‚å¹¶é›†ï¼Œç»“æœä¿å­˜åœ¨ç¬¬ä¸€ä¸ªä¸­
  * @s1 : vector<Symbol>
  * @s2 : vector<Symbol>
  * @return : void
@@ -53,7 +54,7 @@ void YaccManager::merge_two_first_set(vector<Symbol> &s1, const vector<Symbol> &
 }
 
 /*
- * È¥³ıepsilon
+ * å»é™¤epsilon
  * @s : vector<Symbol>
  * @return : vector<Symbol>
  */
@@ -70,7 +71,7 @@ vector<Symbol> YaccManager::remove_epsilon(const vector<Symbol> &s)
 }
 
 /*
- * ÅĞ¶ÏÄ³¸öItemLineÊÇ·ñÔÚÒ»¸öItemLine¼¯ºÏÖĞ
+ * åˆ¤æ–­æŸä¸ªItemLineæ˜¯å¦åœ¨ä¸€ä¸ªItemLineé›†åˆä¸­
  * @il : ItemLine
  * @vil : vector<ItemLine>
  * @return : bool
@@ -87,9 +88,9 @@ bool YaccManager::is_item_line_in_item(const ItemLine &il, const vector<ItemLine
 }
 
 /*
- * ÅĞ¶ÏÄ³¸öItemÊÇ·ñÒÑ´æÔÚÓÚitemsÖĞ
+ * åˆ¤æ–­æŸä¸ªItemæ˜¯å¦å·²å­˜åœ¨äºitemsä¸­
  * @i : Item
- * @return : Item ÒÑ´æÔÚÔò·µ»Ø´æÔÚµÄItem£¬·ñÔò·µ»ØidÎª-1µÄItem
+ * @return : Item å·²å­˜åœ¨åˆ™è¿”å›å­˜åœ¨çš„Itemï¼Œå¦åˆ™è¿”å›idä¸º-1çš„Item
  */
 Item YaccManager::is_item_exist(const Item &it)
 {
@@ -103,7 +104,7 @@ Item YaccManager::is_item_exist(const Item &it)
 }
 
 /*
- * °ÑstringºÍintÆ´½ÓÆğÀ´
+ * æŠŠstringå’Œintæ‹¼æ¥èµ·æ¥
  * @head : string
  * @i : int
  * @return : string
@@ -118,7 +119,7 @@ string YaccManager::string_concat_int(const string &head, int i)
 /*
  * string.split
  * @s : string
- * @delim : char ·Ö¸ô·û
+ * @delim : char åˆ†éš”ç¬¦
  * @return : vector<string>
  */
 vector<string> YaccManager::string_split(const string &s, char delim)
@@ -133,7 +134,7 @@ vector<string> YaccManager::string_split(const string &s, char delim)
 }
 
 /*
- * ÅĞ¶ÏÄ³¸öSymbolÊÇ·ñÒÑ´æÔÚ£¨ÓÚsymbolsÖĞ£©
+ * åˆ¤æ–­æŸä¸ªSymbolæ˜¯å¦å·²å­˜åœ¨ï¼ˆäºsymbolsä¸­ï¼‰
  * @s : Symbol
  * @return : bool
  */
@@ -142,12 +143,54 @@ bool YaccManager::is_symbol_exsit(const Symbol &s)
     return is_symbol_in_first_set(symbols, s);
 }
 
+/*
+ * æ‰“å°ItemLineï¼Œæ ¼å¼ä¸º [S'->Â·S, $]
+ * @il : ItemLine
+ * @return : void
+ */
+void YaccManager::print_item_line(const ItemLine &il)
+{
+	int dot_pos = il.dot_pos;
+	Production p = productions[il.pid];
+	cout << p.left.value << " -> ";
+	vector<Symbol> right = p.right;
+	for (size_t j = 0; j < right.size(); j++) {
+		if (j == dot_pos) {
+			cout << ". ";
+		}
+		cout << right.at(j).value << " ";
+	}
+	if (right.size() == dot_pos) {
+		cout << ".";
+	}
+	cout << ", " << il.lookahead.value << endl;
+}
+
+/*
+ * æ‰“å°Itemï¼Œæ ¼å¼å¦‚ä¸‹:
+ * Item item_id
+ * print all ItemLine(s)
+ * @item : Item
+ * @return : void
+ */
+void YaccManager::print_item(const Item &item)
+{
+	cout << "Item " << item.item_id << endl;
+	cout << "--------------------------" << endl;
+	vector<ItemLine> ils = item.item_lines;
+	for (size_t k = 0; k < ils.size(); k++) {
+		ItemLine tmp_rs = ils.at(k);
+		print_item_line(tmp_rs);
+	}
+	cout << "--------------------------" << endl;
+}
+
 /************ Helper Function End **************/
 
 /*
- * Çóµ¥¸öÎÄ·¨·ûºÅµÄfirst¼¯ºÏ
- * ´Ë·½·¨²»´¦Àí×óµİ¹é£¬Õë¶Ô×óµİ¹é£¬¼ÙÉèÆä²»´æÔÚepsilon
- * Èç´æÔÚA->Aa£¬Ôò²»´æÔÚA->epsilon£¬Õë¶ÔA->AaÕâÑùµÄ²úÉúÊ½£¬Ö±½ÓºöÂÔ
+ * æ±‚å•ä¸ªæ–‡æ³•ç¬¦å·çš„firsté›†åˆ
+ * æ­¤æ–¹æ³•ä¸å¤„ç†å·¦é€’å½’ï¼Œé’ˆå¯¹å·¦é€’å½’ï¼Œå‡è®¾å…¶ä¸å­˜åœ¨epsilon
+ * å¦‚å­˜åœ¨A->Aaï¼Œåˆ™ä¸å­˜åœ¨A->epsilonï¼Œé’ˆå¯¹A->Aaè¿™æ ·çš„äº§ç”Ÿå¼ï¼Œç›´æ¥å¿½ç•¥
  * @symbol : Symbol
  * @return : vector<Symbol>
  */
@@ -157,23 +200,26 @@ vector<Symbol> YaccManager::first(const Symbol &symbol)
     vector<Symbol> result;
     
     if (s_type == 2) { // nonterminal
-        // ±éÀú²úÉúÊ½
+        // éå†äº§ç”Ÿå¼
         for (size_t i = 0; i < productions.size(); i++) {
             Production current_production = productions.at(i);
-            if (current_production.left.equal(symbol)) { // ²úÉúÊ½×ó²¿Îªsymbol
+            if (current_production.left.equal(symbol)) { // äº§ç”Ÿå¼å·¦éƒ¨ä¸ºsymbol
                 vector<Symbol> right = current_production.right;
-                Symbol right0 = right.at(0);
-                if (right0.equal(symbol)) {
-                    // ÀàËÆA->Aa£¬ºöÂÔ
-                } else if (right0.type == 0) {
-                    // epsilon
-                    if (!is_symbol_in_first_set(result, right0)) {
-                        result.push_back(right0);
-                    }
-                } else {
-                    vector<Symbol> right_first = first_beta_a(right);  
-                    merge_two_first_set(result, right_first);
-                }
+
+				if (right.size() == 0) {
+					// epsilon
+					if (!is_symbol_in_first_set(result, Symbol("epsilon", 0))) {
+						result.push_back(Symbol("epsilon", 0));
+					}
+				} else {
+					Symbol right0 = right.at(0);
+					if (right0.equal(symbol)) {
+						// ç±»ä¼¼A->Aaï¼Œå¿½ç•¥
+					} else {
+						vector<Symbol> right_first = first_beta_a(right);  
+						merge_two_first_set(result, right_first);
+					}
+				}
             }
         }
     } else {
@@ -184,7 +230,7 @@ vector<Symbol> YaccManager::first(const Symbol &symbol)
 }
 
 /*
- * ÇóÒ»´®ÎÄ·¨·ûºÅµÄfirst¼¯ºÏ
+ * æ±‚ä¸€ä¸²æ–‡æ³•ç¬¦å·çš„firsté›†åˆ
  * @symbols : vector<Symbol>
  * @return : vector<Symbol>
  */
@@ -192,13 +238,13 @@ vector<Symbol> YaccManager::first_beta_a(const vector<Symbol> &symbols)
 {
     vector<Symbol> result;
     
-    // ±éÀúsymbolsÖĞµÄÃ¿Ò»¸ö·ûºÅ
+    // éå†symbolsä¸­çš„æ¯ä¸€ä¸ªç¬¦å·
     for (size_t i = 0; i < symbols.size(); i++) {
         Symbol current_symbol = symbols.at(i);
         int type = current_symbol.type;
 
         if (type == 1) {
-            // ¼ì²é 0 ~ i-1 ÊÇ·ñÓĞepsilon£¬Ö»ÒªÓĞÒ»¸öÃ»ÓĞ¾ÍÖ±½Ó·µ»Øresult
+            // æ£€æŸ¥ 0 ~ i-1 æ˜¯å¦æœ‰epsilonï¼Œåªè¦æœ‰ä¸€ä¸ªæ²¡æœ‰å°±ç›´æ¥è¿”å›result
             Symbol epsilon("epsilon", 0);
             for (size_t bs = 0; bs < i; bs++) {
                 if (!is_symbol_in_first_set(first(symbols.at(bs)), epsilon)) {
@@ -208,7 +254,7 @@ vector<Symbol> YaccManager::first_beta_a(const vector<Symbol> &symbols)
             result.push_back(current_symbol);
             return remove_epsilon(result);
         } else if (type == 2) {
-            // ¼ì²é 0 ~ i-1 ÊÇ·ñÓĞepsilon£¬Ö»ÒªÓĞÒ»¸öÃ»ÓĞ¾ÍÖ±½Ó·µ»Øresult
+            // æ£€æŸ¥ 0 ~ i-1 æ˜¯å¦æœ‰epsilonï¼Œåªè¦æœ‰ä¸€ä¸ªæ²¡æœ‰å°±ç›´æ¥è¿”å›result
             Symbol epsilon("epsilon", 0);
             for (size_t bs = 0; bs < i; bs++) {
                 if (!is_symbol_in_first_set(first(symbols.at(bs)), epsilon)) {
@@ -223,7 +269,7 @@ vector<Symbol> YaccManager::first_beta_a(const vector<Symbol> &symbols)
 }
 
 /*
- * Çó±Õ°ü
+ * æ±‚é—­åŒ…
  * @item : Item
  * @return : Item
  */
@@ -244,7 +290,7 @@ Item YaccManager::closure(Item &item)
         vector<Symbol> right = current_production.right;
         int new_dot_pos = 0;
         Symbol symbol_after_dot;
-        // ¼ì²édot_posÊÇ·ñÔÚÄ©Î²ÁË
+        // æ£€æŸ¥dot_posæ˜¯å¦åœ¨æœ«å°¾äº†
         if (dot_pos < (int) right.size()) {
             symbol_after_dot = right.at(dot_pos);
             new_dot_pos = dot_pos + 1;
@@ -254,22 +300,22 @@ Item YaccManager::closure(Item &item)
 
         int type = symbol_after_dot.type;
         if (type == 2) {
-            // ¸ÃsymbolÖ®ºóµÄËùÓĞ·ûºÅ
+            // è¯¥symbolä¹‹åçš„æ‰€æœ‰ç¬¦å·
             vector<Symbol> symbols_after_dot(
                 right.begin() + new_dot_pos, right.end());
             symbols_after_dot.push_back(current.lookahead);
             
-            // Çófirst_beta_a
+            // æ±‚first_beta_a
             vector<Symbol> first_rs = first_beta_a(symbols_after_dot);
             
-            // ±éÀú²úÉúÊ½£¬Ñ°ÕÒ×ó²¿Îªsymbol_after_dotµÄ
+            // éå†äº§ç”Ÿå¼ï¼Œå¯»æ‰¾å·¦éƒ¨ä¸ºsymbol_after_dotçš„
             for (size_t i = 0; i < productions.size(); i++) {
                 Production iterate_p = productions.at(i);
                 if (iterate_p.left.equal(symbol_after_dot)) {
-                    // ±éÀúfirst_beta_a¼¯ºÏ£¬Ìí¼ÓItemLine
+                    // éå†first_beta_aé›†åˆï¼Œæ·»åŠ ItemLine
                     for (size_t j = 0; j < first_rs.size(); j++) {
                         ItemLine new_item_line(iterate_p.pid, 0, first_rs.at(j));
-                        // ¼ì²éÊÇ·ñÒÑ´æÔÚÓÚItemÖĞ
+                        // æ£€æŸ¥æ˜¯å¦å·²å­˜åœ¨äºItemä¸­
                         if (!is_item_line_in_item(new_item_line, item_lines)) {
 							item_lines.push_back(new_item_line);
 							item_line_queue.push(new_item_line);
@@ -285,7 +331,7 @@ Item YaccManager::closure(Item &item)
 }
 
 /*
- * goto£¬¸ù¾İSymbolÇóÏÂÒ»¸öItem
+ * gotoï¼Œæ ¹æ®Symbolæ±‚ä¸‹ä¸€ä¸ªItem
  * @item : Item
  * @symbol : Symbol
  * @return : Item
@@ -300,20 +346,20 @@ Item YaccManager::_goto(const Item &item, const Symbol &symbol)
         int dot_pos = current_item_line.dot_pos;
         vector<Symbol> right = productions[current_item_line.pid].right;
 
-        // dot±ß½ç¼ì²é
+        // dotè¾¹ç•Œæ£€æŸ¥
         if (dot_pos < (int) right.size() && right[dot_pos].equal(symbol)) {
             ItemLine new_item_line(current_item_line.pid, dot_pos + 1, current_item_line.lookahead);
             new_Item.insert_item_line(new_item_line);
         }
     }
     
-    // TODO:ÕâÀï¿ÉÒÔ¼ÓÒ»²½ÅĞ¶Ï¼õÉÙÒ»´ÎÎŞÓÃµÄ±Õ°ü²Ù×÷£¨Õë¶Ô¿ÕµÄitem_lines£©
+    // TODO:è¿™é‡Œå¯ä»¥åŠ ä¸€æ­¥åˆ¤æ–­å‡å°‘ä¸€æ¬¡æ— ç”¨çš„é—­åŒ…æ“ä½œï¼ˆé’ˆå¯¹ç©ºçš„item_linesï¼‰
     return closure(new_Item);
 }
 
 /*
- * Éú³ÉËùÓĞµÄÏîÄ¿¼¯£¨Item£©£¬½á¹û±£´æÖÁitems
- * Í¬Ê±±£´ægotoĞÅÏ¢
+ * ç”Ÿæˆæ‰€æœ‰çš„é¡¹ç›®é›†ï¼ˆItemï¼‰ï¼Œç»“æœä¿å­˜è‡³items
+ * åŒæ—¶ä¿å­˜gotoä¿¡æ¯
  * @return : void
  */
 void YaccManager::generate_items()
@@ -324,6 +370,10 @@ void YaccManager::generate_items()
     start_item = closure(start_item);
     items.push_back(start_item);
     item_queue.push(start_item);
+	
+	cout << "Generating Items\n============================" << endl;
+	// print Item 0
+	print_item(start_item);
 
     while (!item_queue.empty()) {
         Item current = item_queue.front();
@@ -332,56 +382,52 @@ void YaccManager::generate_items()
         for (size_t si = 0; si < symbols.size(); si++) {
             Item next_item = _goto(current, symbols.at(si));
 
-            if (next_item.item_lines.size()) { // item_lines²»Îª¿Õ£¬ËµÃ÷Éú³ÉÁËItem
-                Item check = is_item_exist(next_item); // ¼ì²éItemÊÇ·ñÒÑ´æÔÚ
+            if (next_item.item_lines.size()) { // item_linesä¸ä¸ºç©ºï¼Œè¯´æ˜ç”Ÿæˆäº†Item
+                Item check = is_item_exist(next_item); // æ£€æŸ¥Itemæ˜¯å¦å·²å­˜åœ¨
 
-                int t_id; // goto tableÊ¹ÓÃµÄid
+                int t_id; // goto tableä½¿ç”¨çš„id
                 if (check.item_id == -1) {
                     items.push_back(next_item);
                     item_queue.push(next_item);
                     t_id = next_item.item_id;
+					
+					// log new item
+					cout << "New Item Get\n";
+					print_item(next_item);
 
-					// print new item
-					cout << "New Item " << next_item.item_id << endl;
-					vector<ItemLine> ils = next_item.item_lines;
-					for (size_t k = 0; k < ils.size(); k++) {
-						ItemLine tmp_rs = ils.at(k);
-						Production p = productions[tmp_rs.pid];
-						cout << p.left.value << " -> ";
-						vector<Symbol> right = p.right;
-						for (size_t j = 0; j < right.size(); j++) {
-							cout << right.at(j).value << " ";
-						}
-						cout << ", " << tmp_rs.dot_pos << ", " << tmp_rs.lookahead.value << endl;
-					}
                 } else {
                     t_id = check.item_id;
                 }
 
-                // ¸üĞÂgoto_table
+                // æ›´æ–°goto_table
                 int s_id = current.item_id;
 //                 if (s_id < (int) goto_table.max_size() - 1) {
-//                     // ÈİÁ¿²»¹»£¬À©Èİ
+//                     // å®¹é‡ä¸å¤Ÿï¼Œæ‰©å®¹
 //                     goto_table.resize(goto_table.max_size() * 2);
 //                 }
-                goto_table[s_id][symbols.at(si).value] = t_id;
+				goto_table[s_id][symbols.at(si).value] = t_id;
+
+				// log goto
+				cout << "Item " << s_id << " -> Item " << t_id << " through [" << symbols.at(si).value << "]\n"; 
             }
         }
     }
 }
 
 /*
- * Éú³É½âÎö±í£¬±£´æÖÁactionÖĞ£¬ÕâÀï²»½â¾ö³åÍ»
+ * ç”Ÿæˆè§£æè¡¨ï¼Œä¿å­˜è‡³actionä¸­ï¼Œè¿™é‡Œä¸è§£å†³å†²çª
  * @return : void
  */
 void YaccManager::generate_parsing_table()
 {
+	cout << "\n\n\nGenerating Parsing Table\n=======================" << endl;
+
     for (size_t item_index = 0; item_index < items.size(); item_index++) {
         Item current_item = items.at(item_index);
         int item_id = current_item.item_id;
         vector<ItemLine> item_lines = current_item.item_lines;
         
-        // ±éÀúItemLine
+        // éå†ItemLine
         for (size_t item_line_i = 0; item_line_i < item_lines.size(); item_line_i++) {
             ItemLine current_item_line = item_lines.at(item_line_i);
             Production p = productions.at(current_item_line.pid);
@@ -389,16 +435,19 @@ void YaccManager::generate_parsing_table()
             
             Symbol symbol_after_dot;
             if (dot_pos < (int) p.right.size()) {
-                // µã²»ÔÚÄ©Î²
+                // ç‚¹ä¸åœ¨æœ«å°¾
                 symbol_after_dot = p.right[dot_pos];
             } else {
                 symbol_after_dot.value = "";
             }
 
-            if (symbol_after_dot.value.empty()) { // µãÔÚ×îºóÁË
-                if (current_item_line.pid == 0) { // [S'->S¡¤, $]
+            if (symbol_after_dot.value.empty()) { // ç‚¹åœ¨æœ€åäº†
+                if (current_item_line.pid == 0) { // [S'->SÂ·, $]
                     action[item_id]["$"] = "acc";
-                    break; // Õâ¸öItemÃ»±ØÒª¼ÌĞøÁË£¨Ö»¿ÉÄÜÓĞÒ»¸ö£©
+					// log 
+					cout << "Output action[" << item_id << "][$]=\"acc\" by ItemLine ";
+					print_item_line(current_item_line);
+                    break; // è¿™ä¸ªItemæ²¡å¿…è¦ç»§ç»­äº†ï¼ˆåªå¯èƒ½æœ‰ä¸€ä¸ªï¼‰
                 } else {
                     const char *key = current_item_line.lookahead.value.c_str();
 
@@ -407,10 +456,16 @@ void YaccManager::generate_parsing_table()
                     
                     if (before_action.empty()) {
                         before_action = current_action;
+						cout << "Output action[" << item_id << "][\"" << current_item_line.lookahead.value
+							<< "\"]=" << before_action << " by ItemLine ";
+						print_item_line(current_item_line);
                     } else if (before_action.find(current_action.c_str()) != -1) {
-                        // ÒÑ¾­´æÔÚ´Ë¶¯×÷
+                        // å·²ç»å­˜åœ¨æ­¤åŠ¨ä½œ
                     } else {
                         before_action += "|" + current_action;
+						cout << "[Update]Output action[" << item_id << "][\"" << current_item_line.lookahead.value
+							<< "\"]=" << before_action << " by ItemLine ";
+						print_item_line(current_item_line);
                     }
 
                     action[item_id][current_item_line.lookahead.value] = before_action;
@@ -423,10 +478,16 @@ void YaccManager::generate_parsing_table()
                 
                 if (before_action.empty()) {
                     before_action = current_action;
+					cout << "Output action[" << item_id << "][\"" << symbol_after_dot.value
+						<< "\"]=" << before_action << " by ItemLine ";
+					print_item_line(current_item_line);
                 } else if (before_action.find(current_action.c_str()) != -1) {
-                    // ÒÑ¾­´æÔÚ´Ë¶¯×÷
+                    // å·²ç»å­˜åœ¨æ­¤åŠ¨ä½œ
                 } else {
                     before_action += "|" + current_action;
+					cout << "[Update]Output action[" << item_id << "][\"" << symbol_after_dot.value
+						<< "\"]=" << before_action << " by ItemLine ";
+					print_item_line(current_item_line);
                 }
 
                 action[item_id][symbol_after_dot.value] = before_action;
@@ -436,12 +497,14 @@ void YaccManager::generate_parsing_table()
 }
 
 /*
- * ¸ù¾İ¶¨ÒåµÄÓÅÏÈ¼¶½â¾ö³åÍ»
+ * æ ¹æ®å®šä¹‰çš„ä¼˜å…ˆçº§è§£å†³å†²çª
  * @return : void
  */
 void YaccManager::fix_conflict()
 {
-    // ±éÀúaction£¬ÕÒµ½ÓĞ³åÍ»µÄÏî
+	cout << "\n\n\nFix conflict\n===========================" << endl;
+
+    // éå†actionï¼Œæ‰¾åˆ°æœ‰å†²çªçš„é¡¹
     size_t l = items.size();
     for (size_t i = 0; i < l; i++) {
         map<string, string> ca = action.at(i);
@@ -450,15 +513,18 @@ void YaccManager::fix_conflict()
         for (; it != ca.end(); ++it) {
             string current_action = it->second;
 
-            if (current_action.find("|") != -1) { // ´æÔÚ³åÍ»
+            if (current_action.find("|") != -1) { // å­˜åœ¨å†²çª
+				cout << "Find conflict: action[" << i << "][\"" << it->first
+					<< "\"]=" << it->second << endl;
+
                 int conflict_item_id = i;
                 string conflict_symbol_value = it->first;
                 vector<string> conflict_actions = string_split(current_action, '|');
                 
                 int pid;
                 int target_item_id;
-                // ¼ÙÉèÖ»»á´æÔÚÁ½ÖÖ³åÍ»¡£¡£ ÒÆ½üºÍ¹æÔ¼³åÍ»
-                // ±éÀú²éÕÒ³åÍ»µÄ²úÉúÊ½µÄid
+                // å‡è®¾åªä¼šå­˜åœ¨ä¸¤ç§å†²çªã€‚ã€‚ ç§»è¿‘å’Œè§„çº¦å†²çª
+                // éå†æŸ¥æ‰¾å†²çªçš„äº§ç”Ÿå¼çš„id
                 for (size_t ai = 0; ai < conflict_actions.size(); ++ai) {
                     string as = conflict_actions.at(ai);
                     if (as.find("r") != -1) {
@@ -472,8 +538,8 @@ void YaccManager::fix_conflict()
 
                 Production p = productions.at(pid);
                 vector<Symbol> right = p.right;
-                Symbol symbol_inside; // ²úÉúÊ½ÖĞµÄÖÕ½á·û                
-                // ´ÓºóÍùÇ°ÕÒsymbol_inside
+                Symbol symbol_inside("epsilon", 0); // äº§ç”Ÿå¼ä¸­çš„ç»ˆç»“ç¬¦                
+                // ä»åå¾€å‰æ‰¾symbol_inside
                 int index = right.size() - 1;
                 while (index >= 0) {
                     Symbol current = right.at(index);
@@ -484,31 +550,58 @@ void YaccManager::fix_conflict()
                     --index;
                 }
 
-                // ²éÑ¯ÄÚÍâµÄÓÅÏÈ¼¶£¬¸ù¾İÓÅÏÈ¼¶½â¾ö³åÍ»
-                Priority inside_priority = priorities[symbol_inside.value];
-                Priority outside_priority = priorities[conflict_symbol_value];
+                // æŸ¥è¯¢å†…å¤–çš„ä¼˜å…ˆçº§ï¼Œæ ¹æ®ä¼˜å…ˆçº§è§£å†³å†²çª
+				Priority inside_priority, outside_priority;
+				map<string, Priority>::iterator it;
+				it = priorities.find(symbol_inside.value);
+				if (it != priorities.end()) {
+					inside_priority = it->second;
+				} else {
+					inside_priority = Priority(-1, -1);
+				}
+				it = priorities.find(conflict_symbol_value);
+				if (it != priorities.end()) {
+					outside_priority = it->second;
+				} else {
+					outside_priority = Priority(-1, -1);
+				}
                 
                 if (symbol_inside.value == "epsilon") {
-                    // A->¡¤£¬´ËÀàÔİ²»´¦Àí = =#²»ÖªµÀÔõÃ´ÅªÓÅÏÈ¼¶
+                    // A->Â·ï¼Œæ­¤ç±»æš‚ä¸å¤„ç† = =#ä¸çŸ¥é“æ€ä¹ˆå¼„ä¼˜å…ˆçº§
+					cout << "Ignored\n" << endl;
                 } else {
-                    if (inside_priority.level > outside_priority.level) { // ÄÚ²¿ÓÅÏÈ¼¶¸ß
-                        // ¹æÔ¼
+                    if (inside_priority.level > outside_priority.level) { // å†…éƒ¨ä¼˜å…ˆçº§é«˜
+                        // è§„çº¦
                         action[conflict_item_id][conflict_symbol_value] 
                             = string_concat_int(string("r"), pid);
-                    } else if (inside_priority.level < outside_priority.level) { // Íâ²¿ÓÅÏÈ¼¶¸ß
-                        // ÒÆ½ø
+
+						cout << "Level(" << symbol_inside.value << ") > Level("
+							<< conflict_symbol_value << "), select " << string_concat_int(string("r"), pid) << "\n" <<endl;
+                    } else if (inside_priority.level < outside_priority.level) { // å¤–éƒ¨ä¼˜å…ˆçº§é«˜
+                        // ç§»è¿›
                         action[conflict_item_id][conflict_symbol_value]
                             = string_concat_int(string("s"), target_item_id);
+
+						cout << "Level(" << symbol_inside.value << ") < Level("
+							<< conflict_symbol_value << "), select " << string_concat_int(string("s"), target_item_id) << "\n" <<endl;
                     } else {
-                        // ÕâÀï¼ÙÉèÁ½¸ö·ûºÅ½áºÏÂÉÏàÍ¬
+                        // è¿™é‡Œå‡è®¾ä¸¤ä¸ªç¬¦å·ç»“åˆå¾‹ç›¸åŒ
                         if (inside_priority.lr == 0) {
-                            // ×ó½áºÏ£¬¹æÔ¼
+                            // å·¦ç»“åˆï¼Œè§„çº¦
                             action[conflict_item_id][conflict_symbol_value] 
                                 = string_concat_int(string("r"), pid);
+
+							cout << symbol_inside.value << " " << conflict_symbol_value 
+								<< " is same Level, left combination, so select " 
+								<< string_concat_int(string("r"), pid) << "\n" <<endl;
                         } else {
-                            // ÓÒ½áºÏ£¬ÒÆ½ø
+                            // å³ç»“åˆï¼Œç§»è¿›
                             action[conflict_item_id][conflict_symbol_value]
                                 = string_concat_int(string("s"), target_item_id);
+
+							cout << symbol_inside.value << " " << conflict_symbol_value  
+								<< " is same Level, right combination, so select " 
+								<< string_concat_int(string("s"), target_item_id) << "\n" <<endl;
                         }
                     }
                 }
@@ -518,20 +611,20 @@ void YaccManager::fix_conflict()
 }
 
 /*
- * µ÷ÓÃYaccFront½øĞĞ½âÎö£¬²¢×ª»»³öÀ´
+ * è°ƒç”¨YaccFrontè¿›è¡Œè§£æï¼Œå¹¶è½¬æ¢å‡ºæ¥
  */
 void YaccManager::convert_from_front_to_manager(char *filename)
 {
     YaccFront yf;
-    yf.readFromDefFile(filename); // ¶ÁÈ¡½âÎö
+    yf.readFromDefFile(filename); // è¯»å–è§£æ
 
-    // ×ª»»
-    // ½«allTokens×ª»»ÎªSymbolÀïµÄterminal
+    // è½¬æ¢
+    // å°†allTokensè½¬æ¢ä¸ºSymbolé‡Œçš„terminal
     vector<string> tokens = yf.allTokens;
     for (size_t i = 0; i < tokens.size(); i++) {
         symbols.push_back(Symbol(tokens.at(i), 1));
     }
-    // ½«allOperators×ª»»³Épriorities
+    // å°†allOperatorsè½¬æ¢æˆpriorities
     vector<YaccFront::LeftOrRightOperator> operators = yf.allOperators;
     for (size_t i = 0; i < operators.size(); ++i) {
         YaccFront::LeftOrRightOperator current = operators.at(i);
@@ -543,14 +636,14 @@ void YaccManager::convert_from_front_to_manager(char *filename)
     }
 
     vector<YaccFront::production> ps = yf.allProductions;
-    // Ìí¼ÓµÚÒ»¸ö²úÉúÊ½ E'->E
+    // æ·»åŠ ç¬¬ä¸€ä¸ªäº§ç”Ÿå¼ E'->E
     YaccFront::production p0 = ps.at(0);
     Symbol p0l = Symbol("S'", 2);
     vector<Symbol> right0;
     right0.push_back(Symbol(p0.name, 2));
     productions.push_back(Production(0, p0l, right0));
     symbols.push_back(p0l);
-    // ±éÀúËùÓĞ²úÉúÊ½Ìí¼ÓÖÁproductions£¬²¢½«·ÇÖÕ½á·û¼ÓÖÁsymbols
+    // éå†æ‰€æœ‰äº§ç”Ÿå¼æ·»åŠ è‡³productionsï¼Œå¹¶å°†éç»ˆç»“ç¬¦åŠ è‡³symbols
     for (size_t i = 0; i < ps.size(); ++i) {
         YaccFront::production current = ps.at(i);
         vector<string> cr = current.items;
@@ -559,22 +652,22 @@ void YaccManager::convert_from_front_to_manager(char *filename)
             symbols.push_back(left);
         }
         vector<Symbol> right;
-        // ±éÀúproductionµÄÓÒ²¿£¬ÕÒÑ°·ÇÖÕ½á·û£¬²¢Í¬Ê±½«Æä¼ÓÖÁright
+        // éå†productionçš„å³éƒ¨ï¼Œæ‰¾å¯»éç»ˆç»“ç¬¦ï¼Œå¹¶åŒæ—¶å°†å…¶åŠ è‡³right
         if (cr.size() == 0) {
-            // epsilon
-            right.push_back(Symbol("epsilon", 0));
+            // epsilonï¼Œç›´æ¥ç•™ç©º
+            // right.push_back(Symbol("epsilon", 0));
         } else {
             for (size_t ri = 0; ri < cr.size(); ++ri) {
-                Symbol maybe_new(cr.at(ri), 1); // ÏÈ¼ÙÉèÎªÖÕ½á·û
+                Symbol maybe_new(cr.at(ri), 1); // å…ˆå‡è®¾ä¸ºç»ˆç»“ç¬¦
                 if (is_symbol_exsit(maybe_new)) {
-                    // ´æÔÚ¸ÃÖÕ½á·û£¨Èç¹ûÊÇÔòÒ»¶¨´æÔÚ£¬ÒòÎªËùÓĞÖÕ½á·ûÒÑ¾­´æÔÚÓÚsymbolsÖĞ£©
+                    // å­˜åœ¨è¯¥ç»ˆç»“ç¬¦ï¼ˆå¦‚æœæ˜¯åˆ™ä¸€å®šå­˜åœ¨ï¼Œå› ä¸ºæ‰€æœ‰ç»ˆç»“ç¬¦å·²ç»å­˜åœ¨äºsymbolsä¸­ï¼‰
                     right.push_back(maybe_new);
                     continue;
                 }
 
-                maybe_new.type = 2; // Îª·ÇÖÕ½á·û
+                maybe_new.type = 2; // ä¸ºéç»ˆç»“ç¬¦
                 if (!is_symbol_exsit(maybe_new)) {
-                    // ²»´æÔÚ¸Ã·ÇÖÕ½á·û£¬Ìí¼ÓĞÂµÄ·ÇÖÕ½á·û
+                    // ä¸å­˜åœ¨è¯¥éç»ˆç»“ç¬¦ï¼Œæ·»åŠ æ–°çš„éç»ˆç»“ç¬¦
                     symbols.push_back(maybe_new);
                 }
                 right.push_back(maybe_new);
@@ -584,8 +677,142 @@ void YaccManager::convert_from_front_to_manager(char *filename)
     }
 }
 
+void YaccManager::generate_code()
+{
+	ofstream of("out.cpp", ios::app);
+	streambuf *cout_buf = cout.rdbuf();
+	streambuf *file_buf = of.rdbuf();
+	cout.rdbuf(file_buf);
+	
+	cout << "int main() \n" <<
+		"{\n";
+	
+	cout << "vector<map<string, string>> action(1000);\n";
+ 	cout << "map<string, string> actionItem;\n";
+ 	for (size_t i = 0; i < action.size(); i++) {
+ 		//if (!action.at(i).empty()) {
+ 			map<string, string> ca = action.at(i);
+ 			//cout << "map<string, string> actionItem;\n";
+ 			// cout << "action.push_back(actionItem);\n";
+ 			map<string, string>::iterator it = ca.begin();
+ 			for (; it != ca.end(); ++it) {
+ 				cout << "action.at(" << i << ")[\"" << it->first << "\"] = \"" << it->second << "\";" << endl;
+ 			}
+ 		//}
+ 	}
+ 	cout << "vector<map<string, int>> goto_table(1000);\n";
+ 	cout << "map<string, int> gotoItem;\n";
+ 	for (int i = 0; i < goto_table.size(); ++i) {
+ 		//if (!goto_table.at(i).empty()) {
+ 			map<string, int> line = goto_table.at(i);
+ 			//cout << "map<string, int> gotoItem;\n";
+ 			// cout << "goto_table.push_back(gotoItem);\n";
+ 			map<string, int>::iterator it = line.begin();
+ 			for (; it != line.end(); ++it) {
+				if (!is_symbol_exsit(Symbol(it->first, 1))) {
+					cout << "goto_table.at(" << i << ")[\"" << it->first << "\"] = " << it->second << ";" << endl;
+				}
+ 			}
+ 		//}
+ 	}
+	
+	// production left and right
+	stringstream output1, output2;
+	vector<string> production_left;
+	output1 << "vector<string> production_left;\n";
+	vector<int> production_right_symbol_nums;
+	output2 << "vector<int> production_right_symbol_nums;\n";
+	// éå†productionsï¼Œä¿å­˜ç›¸åº”å€¼åˆ°vectorä¸­
+	for (size_t i = 0; i < productions.size(); ++i) {
+		Production current = productions.at(i);
+		output1 << "production_left.push_back(\"" << current.left.value << "\");\n";
+		output2 << "production_right_symbol_nums.push_back(" << current.right.size() << ");\n";
+	}
+	cout << output1.str() << output2.str();
+
+ 	string code = "";
+ 	code = code +
+ 		/* tokenåºåˆ—æ–‡ä»¶çš„è¯»å…¥æµ */
+ 		"ifstream dotTknFile;\n"
+ 		"dotTknFile.open(\"token.tkn\", ios::in);\n"
+ 		"\n"
+ 		/* PDAçš„ç›¸å…³ç»“æ„å’Œåˆå§‹åŒ– */
+ 		"vector<string> symbolStack;\n"
+ 		"symbolStack.push_back(\"$\");\n"
+ 		"vector<int > stateStack;\n"
+ 		"stateStack.push_back(0);\n"
+ 		"\n"
+ 		/* ç”¨äºè§£æ.tknæ–‡ä»¶çš„ä¸€äº›cstring, åŒ…æ‹¬è¯»å¤´ */
+ 		"int buffersize = 512;\n"
+ 		"char *tmpCstr = new char[buffersize];\n"
+ 		"char *readPointer = new char[buffersize];\n"
+ 		"\n"
+ 		/* å¼€å§‹è¯»å…¥.tknæ–‡ä»¶, æŒ‰ç…§.tknå®šä¹‰,è¯»å¤´åº”è¯¥æ˜¯æ¯è¡Œçš„ç¬¬äºŒä¸ªå…ƒç´  */
+ 		"dotTknFile.getline(tmpCstr, buffersize);\n"
+ 		"char *splitChar = \" \"; \n"
+ 		"readPointer = strtok(tmpCstr, splitChar);\n"
+ 		"readPointer = strtok(NULL, splitChar);\n"
+ 		"\n"
+ 		/* å…·ä½“çš„è‡ªåŠ¨æœºè¿‡ç¨‹ */
+ 		"while(strcmp(tmpCstr, \"$\") != 0 || !symbolStack.empty()) {\n"
+ 		"	int currentState = stateStack.at(stateStack.size() - 1);	\n"
+ 		/* gotoæ“ä½œ */
+ 		/*"	if(goto_table.at(currentState)[readPointer] != NULL) {\n"
+ 		"		stateStack.push_back(goto_table.at(currentState)[readPointer][readPointer]);\n"
+ 		"	}\n"*/
+ 		/* actionæ“ä½œ */
+ 		"if (action.at(currentState)[readPointer] != \"\") {\n"
+ 		/* å¾—åˆ°actionçš„snæˆ–rnçš„n(int) */
+ 		"		stringstream ss;\n"
+ 		"		string actionStr;\n"
+ 		"		int production_num;\n"
+ 		"		for (int i = 1; i < action.at(currentState)[readPointer].size(); ++i) {\n"
+ 		"			actionStr += action.at(currentState)[readPointer][i];\n"
+ 		"		}\n"
+ 		"		int actionNum;\n"
+ 		"		ss << actionStr;\n"
+ 		"		ss >> actionNum;\n"
+ 		/* å¯¹äºsnçš„ç§»å…¥æ“ä½œ,å³çŠ¶æ€è½¬æ¢,ç¬¦å·è¿›æ ˆ,è¯»å¤´å‰è¿› */
+ 		"		if(action.at(currentState)[readPointer][0] == 's') {\n"
+ 		"			stateStack.push_back(actionNum);\n"
+ 		"			symbolStack.push_back(readPointer);\n"
+ 		"			dotTknFile.getline(tmpCstr, buffersize);\n"
+ 		"			readPointer = strtok(tmpCstr, splitChar);\n"
+ 		"			readPointer = strtok(NULL, splitChar);\n"
+ 		"		}\n"
+ 		/* å¯¹äºrnçš„è§„çº¦æ“ä½œ,å³çŠ¶æ€å‡ºæ ˆ,ç¬¦å·å‡ºæ ˆ,äº§ç”Ÿå¼å·¦éƒ¨è¿›æ ˆ */
+ 		"		else if (action.at(currentState)[readPointer][0] == 'r') {\n"
+ 		"			for (int i = 0; i < production_right_symbol_nums[actionNum]; ++i) {\n"
+ 		"				symbolStack.pop_back();\n"
+ 		"				stateStack.pop_back();\n"
+ 		"			}\n"
+ 		"			symbolStack.push_back(production_left[actionNum]);\n"
+		"			stateStack.push_back(goto_table.at(stateStack.at(stateStack.size() - 1))[symbolStack.at(symbolStack.size() - 1)]);\n"
+ 		"		}\n"
+ 		/* accept */
+ 		"		else if (action.at(currentState)[readPointer][0] == 'a') {\n"
+ 		"			cout << \"accept\" << endl;\n"
+ 		"			return 1;\n"
+ 		"		}\n"
+ 		/* ä¸æ˜¯ä¸Šé¢çš„æƒ…å†µåˆ™å‡ºé”™ */
+ 		"		else {\n"
+ 		"			cout << \"error\" << endl;\n"
+ 		"			return -1;\n"
+ 		"		}\n"
+ 		"	}\n"
+ 		/* ä¸æ˜¯ä¸Šé¢çš„æƒ…å†µåˆ™å‡ºé”™ */
+ 		"	else {\n"
+ 		"		cout << \"error\" << endl;\n"
+ 		"		return -1;\n"
+ 		"	}\n"
+ 		"}\n";
+ 	cout << code;
+
+	cout << "}";
+}
+
 /*
- * ×ÜµÄÇı¶¯º¯Êı£¬¸ºÔğÍê³É´ÓYaccFrontµÄ×ª»»²¢µ÷ÓÃ¸÷·½·¨
+ * æ€»çš„é©±åŠ¨å‡½æ•°ï¼Œè´Ÿè´£å®Œæˆä»YaccFrontçš„è½¬æ¢å¹¶è°ƒç”¨å„æ–¹æ³•
  */
 void YaccManager::run()
 {
@@ -595,7 +822,7 @@ void YaccManager::run()
 }
 
 /*
- * ÉèÖÃ²úÉúÊ½
+ * è®¾ç½®äº§ç”Ÿå¼
  * @ps : vector<Production>
  * @return : void
  */
@@ -605,7 +832,7 @@ void YaccManager::set_productions(const vector<Production> &ps)
 }
 
 /*
- * ÉèÖÃÎÄ·¨·ûºÅ
+ * è®¾ç½®æ–‡æ³•ç¬¦å·
  * @ss : vector<Symbol>
  * @return : void
  */
@@ -615,7 +842,7 @@ void YaccManager::set_symbols(const vector<Symbol> &ss)
 }
 
 /*
- * ÉèÖÃÓÅÏÈ¼¶
+ * è®¾ç½®ä¼˜å…ˆçº§
  * @ps : map<string, Priority>
  * @return : void
  */
@@ -624,7 +851,7 @@ void YaccManager::set_priorities(const map<string, Priority> &ps)
     priorities = ps;
 }
 
-/* ²âÊÔÓÃÀı */
+/* æµ‹è¯•ç”¨ä¾‹ */
 void YaccManager::test_run()
 {
     // test first_beta_a
@@ -667,163 +894,25 @@ void YaccManager::test_run()
 //     start_item.item_lines = item_lines;
 //     start_item = closure(start_item);
 //     items.push_back(start_item);
-
+	
+	ofstream of("generate_log.log");
+	streambuf *cout_buf = cout.rdbuf(); // backup
+	log_file = of.rdbuf();
+	cout.rdbuf(log_file);
     
-	convert_from_front_to_manager("GrammarDefinition.y");
+	convert_from_front_to_manager("GrammarDefinition2.y");
+	// convert_from_front_to_manager("test.y");
     // test generate_items
     generate_items();
 
-    /*for (size_t i = 0; i < items.size(); i++) {
-        Item ri = items.at(i);
-        vector<ItemLine> rs_ils = ri.item_lines;
-
-        for (size_t k = 0; k < rs_ils.size(); k++) {
-             ItemLine tmp_rs = rs_ils.at(k);
-             Production p = productions[tmp_rs.pid];
-             cout << p.left.value << " -> ";
-             vector<Symbol> right = p.right;
-             for (size_t j = 0; j < right.size(); j++) {
-                 cout << right.at(j).value << " ";
-             }
-             cout << ", " << tmp_rs.dot_pos << ", " << tmp_rs.lookahead.value << endl;
-        }
-
-        cout << endl;
-    }*/
-
     generate_parsing_table();
     fix_conflict();
-
-	cout << "\n" << "Finished" << endl;
-//     size_t l = items.size();
-//     
-// 	cout << "map<string, string> action;" << endl;
-//         
-//     for (size_t i = 0; i < l; i++) {
-//         map<string, string> ca = action.at(i);
-// 
-//         map<string, string>::iterator it = ca.begin();
-//         for (; it != ca.end(); ++it) {
-//             cout << "(" << it->first << ", " << it->second << ")" << endl;
-// 			cout << "action[\"" << it->first << "\"] = " << it->second << ";" << endl;
-//         }
-// 		
-//         cout << endl;
-//     }
-
-	/* Éú³É²úÉúÊ½µÄ×ó²¿ºÍÓÒ²¿ÊıÁ¿vector */
-// 	stringstream output1, output2;
-// 	vector<string> production_left;
-// 	output1 << "vector<string> production_left;\n";
-// 	vector<int> production_right_symbol_nums;
-// 	output2 << "vector<int> production_right_symbol_nums;\n";
-// 	// ±éÀúproductions£¬±£´æÏàÓ¦Öµµ½vectorÖĞ
-// 	for (size_t i = 0; i < productions.size(); ++i) {
-// 		Production current = productions.at(i);
-// 		output1 << "production_left.push_back(\"" << current.left.value << "\");\n";
-// 		output2 << "production_right_symbol_nums.push_back(" << current.right.size() << ");\n";
-// 	}
-// 	cout << output1.str() << output2.str();
-// 	cout << "vector<map<string, string>> action;\n";
-// 	cout << "map<string, string> actionItem;\n";
-// 	for (size_t i = 0; i < action.size(); i++) {
-// 		//if (!action.at(i).empty()) {
-// 			map<string, string> ca = action.at(i);
-// 			//cout << "map<string, string> actionItem;\n";
-// 			cout << "action.push_back(actionItem);\n";
-// 			map<string, string>::iterator it = ca.begin();
-// 			for (; it != ca.end(); ++it) {
-// 				cout << "action.at(" << i << ")[\"" << it->first << "\"] = \"" << it->second << "\";" << endl;
-// 			}
-// 		//}
-// 	}
-// 	cout << "vector<map<string, int>> goto_table;\n";
-// 	cout << "map<string, int> gotoItem;\n";
-// 	for (int i = 0; i < goto_table.size(); ++i) {
-// 		//if (!goto_table.at(i).empty()) {
-// 			map<string, int> line = goto_table.at(i);
-// 			//cout << "map<string, int> gotoItem;\n";
-// 			cout << "goto_table.push_back(gotoItem);\n";
-// 			map<string, int>::iterator it = line.begin();
-// 			for (; it != line.end(); ++it) {
-// 				cout << "goto_table.at(" << i << ")[\"" << it->first << "\"] = " << it->second << ";" << endl;
-// 			}
-// 		//}
-// 	}
-// 	string code = "";
-// 	code = code +
-// 		/* tokenĞòÁĞÎÄ¼şµÄ¶ÁÈëÁ÷ */
-// 		"ifstream dotTknFile;\n"
-// 		"dotTknFile.open(\"token.tkn\", ios::in);\n"
-// 		"\n"
-// 		/* PDAµÄÏà¹Ø½á¹¹ºÍ³õÊ¼»¯ */
-// 		"vector<string> symbolStack;\n"
-// 		"symbolStack.push_back(\"$\");\n"
-// 		"vector<int > stateStack;\n"
-// 		"stateStack.push_back(0);\n"
-// 		"\n"
-// 		/* ÓÃÓÚ½âÎö.tknÎÄ¼şµÄÒ»Ğ©cstring, °üÀ¨¶ÁÍ· */
-// 		"int buffersize = 512;\n"
-// 		"char *tmpCstr = new char[buffersize];\n"
-// 		"char *readPointer = new char[buffersize];\n"
-// 		"\n"
-// 		/* ¿ªÊ¼¶ÁÈë.tknÎÄ¼ş, °´ÕÕ.tkn¶¨Òå,¶ÁÍ·Ó¦¸ÃÊÇÃ¿ĞĞµÄµÚ¶ş¸öÔªËØ */
-// 		"dotTknFile.getline(tmpCstr, buffersize);\n"
-// 		"char *splitChar = \" \"; \n"
-// 		"readPointer = strtok(tmpCstr, splitChar);\n"
-// 		"readPointer = strtok(NULL, splitChar);\n"
-// 		"\n"
-// 		/* ¾ßÌåµÄ×Ô¶¯»ú¹ı³Ì */
-// 		"while(strcmp(tmpCstr, \"$\") != 0 && !symbolStack.empty()) {\n"
-// 		"	int currentState = stateStack.at(stateStack.size() - 1);	\n"
-// 		/* goto²Ù×÷ */
-// 		"	if(goto_table.at(currentState)[readPointer] != NULL) {\n"
-// 		"		stateStack.push_back(goto_table.at(currentState)[readPointer][readPointer]);\n"
-// 		"	}\n"
-// 		/* action²Ù×÷ */
-// 		"	else if (action.at(currentState)[readPointer] != \"\") {\n"
-// 		/* µÃµ½actionµÄsn»òrnµÄn(int) */
-// 		"		stringstream ss;\n"
-// 		"		string actionStr;\n"
-// 		"		int production_num;\n"
-// 		"		for (int i = 1; i < action.at(currentState)[readPointer].size(); ++i) {\n"
-// 		"			actionStr += action.at(currentState)[readPointer][i];\n"
-// 		"		}\n"
-// 		"		int actionNum;\n"
-// 		"		ss << actionStr;\n"
-// 		"		ss >> actionNum;\n"
-// 		/* ¶ÔÓÚsnµÄÒÆÈë²Ù×÷,¼´×´Ì¬×ª»»,·ûºÅ½øÕ»,¶ÁÍ·Ç°½ø */
-// 		"		if(action.at(currentState)[readPointer][0] == 's') {\n"
-// 		"			stateStack.push_back(actionNum);\n"
-// 		"			symbolStack.push_back(readPointer);\n"
-// 		"			dotTknFile.getline(tmpCstr, buffersize);\n"
-// 		"			readPointer = strtok(tmpCstr, splitChar);\n"
-// 		"			readPointer = strtok(NULL, splitChar);\n"
-// 		"		}\n"
-// 		/* ¶ÔÓÚrnµÄ¹æÔ¼²Ù×÷,¼´×´Ì¬³öÕ»,·ûºÅ³öÕ»,²úÉúÊ½×ó²¿½øÕ» */
-// 		"		else if (action.at(currentState)[readPointer][0] == 'r') {\n"
-// 		"			for (int i = 0; i < production_right_symbol_nums[actionNum]; ++i) {\n"
-// 		"				symbolStack.pop_back();\n"
-// 		"				stateStack.pop_back();\n"
-// 		"			}\n"
-// 		"			symbolStack.push_back(production_left[actionNum]);\n"
-// 		"		}\n"
-// 		/* accept */
-// 		"		else if (action.at(currentState)[readPointer][0] == 'a') {\n"
-// 		"			cout << \"accept\" << endl;\n"
-// 		"			return 1;\n"
-// 		"		}\n"
-// 		/* ²»ÊÇÉÏÃæµÄÇé¿öÔò³ö´í */
-// 		"		else {\n"
-// 		"			cout << \"error\" << endl;\n"
-// 		"			return -1;\n"
-// 		"		}\n"
-// 		"	}\n"
-// 		/* ²»ÊÇÉÏÃæµÄÇé¿öÔò³ö´í */
-// 		"	else {\n"
-// 		"		cout << \"error\" << endl;\n"
-// 		"		return -1;\n"
-// 		"	}\n"
-// 		"}\n";
-// 	cout << code;
+	
+	generate_code();
+	
+	of.close();
+	log_file = NULL;
+	cout.rdbuf(cout_buf);
+	cout << "Finished" << endl;
+	
 }

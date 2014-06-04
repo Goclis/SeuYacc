@@ -129,11 +129,12 @@ void YaccFront::readFromDefFile(char* filename)
         readDefFile.getline(tmpCstr, BUFFERSIZE);
     }
     /* 将第四段直接输出到生成的文件 */
-    readDefFile.getline(tmpCstr, BUFFERSIZE);
+    /*readDefFile.getline(tmpCstr, BUFFERSIZE);
     while (strcmp(tmpCstr, "") != 0) {
         outputFile << tmpCstr << endl;
         readDefFile.getline(tmpCstr, BUFFERSIZE);
-    }
+    }*/
+	outputFile.close();
     readDefFile.close();
 }
 

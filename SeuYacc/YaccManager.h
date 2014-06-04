@@ -60,6 +60,7 @@ private:
     vector<map<string, int>> goto_table; // goto表
     vector<map<string, string>> action; // action表
     map<string, Priority> priorities; // 优先级关系
+	streambuf *log_file; // 日志文件
     
     /* Helper Functions */
 
@@ -89,6 +90,12 @@ private:
 
     // 从YaccFront转换到YaccManger
     void convert_from_front_to_manager(char *);
+
+	// 打印ItemLine
+	void print_item_line(const ItemLine &il);
+
+	// 打印Item
+	void print_item(const Item &item);
 };
 
 #endif // _YACCMANAGER_H_
