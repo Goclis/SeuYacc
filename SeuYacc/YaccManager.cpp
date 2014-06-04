@@ -196,37 +196,91 @@ void YaccManager::print_item(const Item &item)
  */
 vector<Symbol> YaccManager::first(const Symbol &symbol)
 {
-    int s_type = symbol.type;
-    vector<Symbol> result;
-    
-    if (s_type == 2) { // nonterminal
-        // 遍历产生式
-        for (size_t i = 0; i < productions.size(); i++) {
-            Production current_production = productions.at(i);
-            if (current_production.left.equal(symbol)) { // 产生式左部为symbol
-                vector<Symbol> right = current_production.right;
+	int s_type = symbol.type;
+	vector<Symbol> result;
+
+	if (s_type == 2) { // nonterminal
+		// 遍历一遍产生式，将可添加的先添加了（右部为空或开头为终结符的）
+		for (size_t i = 0; i < productions.size(); i++) {
+			Production current_production = productions.at(i);
+
+			if (current_production.left.equal(symbol)) { // 产生式左部为symbol
+				vector<Symbol> right = current_production.right;
 
 				if (right.size() == 0) {
-					// epsilon
 					if (!is_symbol_in_first_set(result, Symbol("epsilon", 0))) {
 						result.push_back(Symbol("epsilon", 0));
 					}
-				} else {
-					Symbol right0 = right.at(0);
-					if (right0.equal(symbol)) {
-						// 类似A->Aa，忽略
-					} else {
-						vector<Symbol> right_first = first_beta_a(right);  
-						merge_two_first_set(result, right_first);
+				} else if (right.at(0).type == 1) { // 开头是非终结符
+					if (!is_symbol_in_first_set(result, right.at(0))) {
+						result.push_back(right.at(0));
 					}
 				}
-            }
-        }
-    } else {
-        result.push_back(symbol);
-    }
+			}
+		}
 
-    return result;
+		// 再遍历一遍，只管右部开头为非终结符的
+		for (size_t i = 0; i < productions.size(); i++) {
+			Production current_production = productions.at(i);
+
+			if (current_production.left.equal(symbol)) { // 产生式左部为symbol
+				vector<Symbol> right = current_production.right;
+
+				if (right.size() != 0 && right.at(0).type == 2) {
+					vector<Symbol> before_first;
+					// 遍历right，扩充result
+					for (size_t ri = 0; ri < right.size(); ++ri) {
+						Symbol current_right = right.at(ri);
+
+						if (current_right.equal(symbol)) { // 遇到待求的Symbol
+							if (!is_symbol_in_first_set(result, Symbol("epsilon", 0))) {
+								// 不存在epsilon，后面的无法继续了
+								break;
+							} else {
+								before_first = result;
+							}
+						} else if (current_right.type == 1) { // 遇到终结符
+							if (is_symbol_in_first_set(before_first, Symbol("epsilon", 0))) {
+								// 之前的那个符号的first集中有epsilon
+								if (!is_symbol_in_first_set(result, current_right)) {
+									result.push_back(current_right); // 这是最后一个
+								}
+							} 
+
+							break; // 终结符不管什么情况都该break了
+						} else { // 非终结符
+							if (ri == 0) {
+								before_first = first(current_right);
+								if (ri == right.size() - 1) {
+									// 末尾了，如果当前非终结符有epsilon，则左部也包含，不需要过滤
+									merge_two_first_set(result, before_first);
+								} else {
+									merge_two_first_set(result, remove_epsilon(before_first));
+								}
+							} else if (is_symbol_in_first_set(before_first, Symbol("epsilon", 0))) {
+								// 之前的那个符号的first集中有epsilon
+								before_first = first(current_right); // 更新before_first集
+
+								if (ri == right.size() - 1) {
+									// 末尾了，如果当前非终结符有epsilon，则左部也包含，不需要过滤
+									merge_two_first_set(result, before_first);
+								} else {
+									merge_two_first_set(result, remove_epsilon(before_first));
+								}
+							} else {
+								break;
+							}
+						}
+					}
+
+				}
+			}
+		}
+	} else {
+		result.push_back(symbol);
+	}
+
+	return result;
 }
 
 /*
@@ -236,36 +290,41 @@ vector<Symbol> YaccManager::first(const Symbol &symbol)
  */
 vector<Symbol> YaccManager::first_beta_a(const vector<Symbol> &symbols)
 {
-    vector<Symbol> result;
-    
-    // 遍历symbols中的每一个符号
-    for (size_t i = 0; i < symbols.size(); i++) {
-        Symbol current_symbol = symbols.at(i);
-        int type = current_symbol.type;
+	vector<Symbol> result, before_first;
 
-        if (type == 1) {
-            // 检查 0 ~ i-1 是否有epsilon，只要有一个没有就直接返回result
-            Symbol epsilon("epsilon", 0);
-            for (size_t bs = 0; bs < i; bs++) {
-                if (!is_symbol_in_first_set(first(symbols.at(bs)), epsilon)) {
-                    return result;
-                }
-            }
-            result.push_back(current_symbol);
-            return remove_epsilon(result);
-        } else if (type == 2) {
-            // 检查 0 ~ i-1 是否有epsilon，只要有一个没有就直接返回result
-            Symbol epsilon("epsilon", 0);
-            for (size_t bs = 0; bs < i; bs++) {
-                if (!is_symbol_in_first_set(first(symbols.at(bs)), epsilon)) {
-                    return remove_epsilon(result);
-                }
-            }
-            merge_two_first_set(result, first(current_symbol));
-        }
-    }
+	// 遍历symbols中的每一个符号
+	for (size_t i = 0; i < symbols.size(); i++) {
+		Symbol current_symbol = symbols.at(i);
+		int type = current_symbol.type;
 
-    return remove_epsilon(result);
+		if (i == 0) {
+			// 第一个元素特殊处理
+			before_first = first(current_symbol);
+			merge_two_first_set(result, remove_epsilon(before_first)); // 因为返回的集合肯定不包含epsilon，所以直接过滤掉
+		} else {
+			if (type == 1) {
+				// 检查before_first中是否有epsilon
+				if (is_symbol_in_first_set(before_first, Symbol("epsilon", 0))) {
+					if (!is_symbol_in_first_set(result, current_symbol)) {
+						result.push_back(current_symbol); // 如果result中不存在则压入
+					}
+				} 
+				break; // 无论有没有都结束（因为是终结符）
+			} else {
+				// 非终结符的处理
+				// 检查before_first是否有epsilon
+				if (is_symbol_in_first_set(before_first, Symbol("epsilon", 0))) {
+					// 存在则更新before_first
+					before_first = first(current_symbol);
+					merge_two_first_set(result, remove_epsilon(before_first));
+				} else {
+					break;
+				}
+			}
+		}
+	}
+
+	return remove_epsilon(result);
 }
 
 /*
