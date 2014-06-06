@@ -154,6 +154,7 @@ private:
     vector<map<string, int>> goto_table; // goto表
     vector<map<string, string>> action; // action表
     map<string, Priority> priorities; // 优先级关系
+    map<string, vector<Symbol>> first_set; // 缓存first，空间换时间
 	streambuf *log_file; // 日志文件
     
     /* Helper Functions */
