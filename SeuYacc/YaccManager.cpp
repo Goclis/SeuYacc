@@ -773,7 +773,7 @@ void YaccManager::generate_code()
 		"in.close();\n";
 	cout << code_token_id_name_map;
 
-	cout << "vector<map<string, string>> action(1000);\n";
+	cout << "vector<map<string, string>> action(" << action.size() << ");\n";
 	cout << "map<string, string> actionItem;\n";
 	for (size_t i = 0; i < action.size(); i++) {
 		map<string, string> ca = action.at(i);
@@ -782,7 +782,7 @@ void YaccManager::generate_code()
 			cout << "action.at(" << i << ")[\"" << it->first << "\"] = \"" << it->second << "\";" << endl;
 		}
 	}
-	cout << "vector<map<string, int>> goto_table(1000);\n";
+	cout << "vector<map<string, int>> goto_table(" << goto_table.size() << ");\n";
 	cout << "map<string, int> gotoItem;\n";
 	for (unsigned int i = 0; i < goto_table.size(); ++i) {
 		map<string, int> line = goto_table.at(i);
