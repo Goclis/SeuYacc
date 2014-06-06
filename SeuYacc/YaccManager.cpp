@@ -908,14 +908,14 @@ void YaccManager::generate_code()
 /*
  * 总的驱动函数，负责完成从YaccFront的转换并调用各方法
  */
-void YaccManager::run()
+void YaccManager::run(char *filename)
 {
     ofstream of("generate_log.log");
     streambuf *cout_buf = cout.rdbuf(); // backup
     log_file = of.rdbuf();
     cout.rdbuf(log_file);
 
-    convert_from_front_to_manager("GrammarDefinition2.y");
+    convert_from_front_to_manager(filename);
     generate_items();
     generate_parsing_table();
     fix_conflict();

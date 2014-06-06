@@ -98,7 +98,7 @@ int main(int argc, char **argv)
     
     
     //ym.run();
-	 ym.run();
+	 ym.run("GrammarDefinition2.y");
 
     return 0;
 }

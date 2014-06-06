@@ -139,8 +139,8 @@ public:
     // 生成目标代码
     void generate_code();
 
-    // driver
-    void run();
+    // driver，针对某个file
+    void run(char *filename);
     
     // public setter and test_run
     void set_productions(const vector<Production> &ps);

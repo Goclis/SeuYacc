@@ -45,8 +45,8 @@ public:
 
     void generate_code();
 
-    // driver
-    void run();
+    // driver£¬Õë¶ÔÄ³¸öfile
+    void run(char *filename);
     
     // public setter and test_run
     void set_productions(const vector<Production> &ps);
