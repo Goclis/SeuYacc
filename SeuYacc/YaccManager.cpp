@@ -9,9 +9,6 @@ using namespace std;
 
 YaccManager::YaccManager(void)
 {
-    // TODO: 动态扩展goto_table和action的大小，这里定死了。
-    goto_table = vector<map<string, int>>(1000);
-    action = vector<map<string, string>>(1000);
 }
 
 YaccManager::~YaccManager(void)
@@ -460,10 +457,10 @@ void YaccManager::generate_items()
 
                 // 更新goto_table
                 int s_id = current.item_id;
-//                 if (s_id < (int) goto_table.max_size() - 1) {
-//                     // 容量不够，扩容
-//                     goto_table.resize(goto_table.max_size() * 2);
-//                 }
+                if (s_id >= (int) goto_table.size()) {
+                    // 容量不够，扩容
+                    goto_table.resize(s_id + 1);
+                }
 				goto_table[s_id][symbols.at(si).value] = t_id;
 
 				// log goto
@@ -480,7 +477,8 @@ void YaccManager::generate_items()
 void YaccManager::generate_parsing_table()
 {
 	cout << "\n\n\nGenerating Parsing Table\n=======================" << endl;
-
+    action.resize(items.size()); // 设置action的大小，和items一样
+    // 遍历items，生成action
     for (size_t item_index = 0; item_index < items.size(); item_index++) {
         Item current_item = items.at(item_index);
         int item_id = current_item.item_id;
@@ -746,7 +744,7 @@ void YaccManager::generate_code()
 	cout << "int main() \n" <<
 		"{\n";
 	
-	cout << "vector<map<string, string>> action(1000);\n";
+	cout << "vector<map<string, string>> action(" << action.size() << ");\n";
  	cout << "map<string, string> actionItem;\n";
  	for (size_t i = 0; i < action.size(); i++) {
  		//if (!action.at(i).empty()) {
@@ -759,9 +757,9 @@ void YaccManager::generate_code()
  			}
  		//}
  	}
- 	cout << "vector<map<string, int>> goto_table(1000);\n";
+ 	cout << "vector<map<string, int>> goto_table(" << goto_table.size() << ");\n";
  	cout << "map<string, int> gotoItem;\n";
- 	for (int i = 0; i < goto_table.size(); ++i) {
+ 	for (size_t i = 0; i < goto_table.size(); ++i) {
  		//if (!goto_table.at(i).empty()) {
  			map<string, int> line = goto_table.at(i);
  			//cout << "map<string, int> gotoItem;\n";
@@ -875,9 +873,21 @@ void YaccManager::generate_code()
  */
 void YaccManager::run()
 {
-    convert_from_front_to_manager("GrammarDefinition.y");
-	generate_items();
-	generate_parsing_table();
+    ofstream of("generate_log.log");
+    streambuf *cout_buf = cout.rdbuf(); // backup
+    log_file = of.rdbuf();
+    cout.rdbuf(log_file);
+
+    convert_from_front_to_manager("GrammarDefinition2.y");
+    generate_items();
+    generate_parsing_table();
+    fix_conflict();
+    generate_code();
+
+    of.close();
+    log_file = NULL;
+    cout.rdbuf(cout_buf);
+    cout << "Finished" << endl;
 }
 
 /*
