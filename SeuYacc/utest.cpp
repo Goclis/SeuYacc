@@ -98,7 +98,7 @@ int main(int argc, char **argv)
     
     
     //ym.run();
-	 ym.test_run();
+	 ym.run();
 
     return 0;
 }

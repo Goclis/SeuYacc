@@ -14,8 +14,24 @@ using namespace std;
 
 int main() 
 {
-vector<map<string, string>> action(1000);
-map<string, string> actionItem;
+map<int,string> map_token_id;
+ifstream in;
+in.open("token_list.txt");
+int idx = 0;
+string token_name;
+bool is_token, is_white, is_address;
+while(!in.eof()) {
+	in >> token_name;
+	if(token_name == "") {
+		break;
+	}
+	in >> is_token >> is_white >> is_address;
+	map_token_id.insert(make_pair(idx, token_name));
+	token_name.clear();
+	idx++;
+}
+in.close();
+vector<map<string, string>> action(302);
 action.at(0)["bool"] = "s3";
 action.at(0)["char"] = "s2";
 action.at(0)["double"] = "s5";
@@ -1719,8 +1735,7 @@ action.at(301)["void"] = "r13";
 action.at(301)["while"] = "r13";
 action.at(301)["{"] = "r13";
 action.at(301)["}"] = "r13";
-vector<map<string, int>> goto_table(1000);
-map<string, int> gotoItem;
+vector<map<string, int>> goto_table(301);
 goto_table.at(0)["declaration"] = 9;
 goto_table.at(0)["declarations"] = 8;
 goto_table.at(0)["fun_declaration"] = 10;
@@ -2275,7 +2290,9 @@ production_right_symbol_nums.push_back(1);
 production_right_symbol_nums.push_back(1);
 production_right_symbol_nums.push_back(1);
 ifstream dotTknFile;
-dotTknFile.open("token.tkn", ios::in);
+ofstream reductionSequence;
+dotTknFile.open("token_sequence.tkn", ios::in);
+reductionSequence.open("reduction_sequence.txt", ios::out);
 
 vector<string> symbolStack;
 symbolStack.push_back("$");
@@ -2284,14 +2301,23 @@ stateStack.push_back(0);
 
 int buffersize = 512;
 char *tmpCstr = new char[buffersize];
-char *readPointer = new char[buffersize];
+char *readPointerCstr = new char[buffersize];
+string readPointer;
 
 dotTknFile.getline(tmpCstr, buffersize);
 char *splitChar = " "; 
-readPointer = strtok(tmpCstr, splitChar);
-readPointer = strtok(NULL, splitChar);
+readPointerCstr = strtok(tmpCstr, splitChar);
+readPointerCstr = strtok(NULL, splitChar);
 
-while(strcmp(tmpCstr, "$") != 0 || !symbolStack.empty()) {
+while(strcmp(readPointerCstr, "$") != 0 || !symbolStack.empty()) {
+	if (strcmp(readPointerCstr, "$") != 0) {
+		stringstream strstm;
+		strstm << readPointerCstr;
+		int tknnum = 0;
+		strstm >> tknnum;
+		readPointer = map_token_id[tknnum];
+	}
+	else readPointer = "$";
 	int currentState = stateStack.at(stateStack.size() - 1);	
 if (action.at(currentState)[readPointer] != "") {
 		stringstream ss;
@@ -2307,28 +2333,38 @@ if (action.at(currentState)[readPointer] != "") {
 			stateStack.push_back(actionNum);
 			symbolStack.push_back(readPointer);
 			dotTknFile.getline(tmpCstr, buffersize);
-			readPointer = strtok(tmpCstr, splitChar);
-			readPointer = strtok(NULL, splitChar);
+			readPointerCstr = strtok(tmpCstr, splitChar);
+			readPointerCstr = strtok(NULL, splitChar);
 		}
 		else if (action.at(currentState)[readPointer][0] == 'r') {
+			reductionSequence << "r"<< actionStr << ":	";
+			vector<string> itembuffer;
 			for (int i = 0; i < production_right_symbol_nums[actionNum]; ++i) {
+				itembuffer.push_back(symbolStack.back());
 				symbolStack.pop_back();
 				stateStack.pop_back();
 			}
+			int i = itembuffer.size() - 1;
+			for (i; i >= 0; --i) {
+			reductionSequence << itembuffer.at(i) << " ";
+			}
+			reductionSequence << " -> ";
+			reductionSequence << production_left[actionNum];
+			reductionSequence << endl;
 			symbolStack.push_back(production_left[actionNum]);
-			stateStack.push_back(goto_table.at(stateStack.at(stateStack.size() - 1))[symbolStack.at(symbolStack.size() - 1)]);
+			stateStack.push_back(goto_table.at(stateStack.back())[symbolStack.back()]);
 		}
 		else if (action.at(currentState)[readPointer][0] == 'a') {
-			cout << "accept" << endl;
+			reductionSequence << "accept" << endl;
 			return 1;
 		}
 		else {
-			cout << "error" << endl;
+			reductionSequence << "error" << endl;
 			return -1;
 		}
 	}
 	else {
-		cout << "error" << endl;
+		reductionSequence << "error" << endl;
 		return -1;
 	}
 }
