@@ -193,6 +193,11 @@ void YaccManager::print_item(const Item &item)
  */
 vector<Symbol> YaccManager::first(const Symbol &symbol)
 {
+    if (first_set.count(symbol.value) != 0) {
+        // 已经缓存过了，直接返回
+        return first_set[symbol.value];
+    }
+
 	int s_type = symbol.type;
 	vector<Symbol> result;
 
@@ -276,7 +281,9 @@ vector<Symbol> YaccManager::first(const Symbol &symbol)
 	} else {
 		result.push_back(symbol);
 	}
-
+    
+    // 缓存新生成的first
+    first_set[symbol.value] = result;
 	return result;
 }
 
