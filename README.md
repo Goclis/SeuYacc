@@ -100,10 +100,11 @@ __YaccManager__
 整体驱动类，流程大致如下：
 
  - 建立一个YaccManager实体
- - 设置其productions, priorities, symbols等参数
+ - 解析.y文件并转化为YaccManager中的成员（convert_from_front_to_manager）
  - 生成items（generate_items）
  - 生成parsing_table（generate_parsing_table）
  - 去除冲突（fix_conflict）
+ - 生成目标代码（generate_code）
 ```
 class YaccManager
 {
@@ -111,6 +112,9 @@ public:
     YaccManager(void);
     ~YaccManager(void);
     
+    // 读入.y文件进行解析
+    void read_from_definition_file(char *filename);
+
     // 求闭包
     Item closure(Item &item);
 
@@ -132,6 +136,12 @@ public:
     // 解决已生成解析表中的冲突
     void fix_conflict();
     
+    // 生成目标代码
+    void generate_code();
+
+    // driver
+    void run();
+    
     // public setter and test_run
     void set_productions(const vector<Production> &ps);
     void set_symbols(const vector<Symbol> &ss);
@@ -144,6 +154,7 @@ private:
     vector<map<string, int>> goto_table; // goto表
     vector<map<string, string>> action; // action表
     map<string, Priority> priorities; // 优先级关系
+	streambuf *log_file; // 日志文件
     
     /* Helper Functions */
 
@@ -162,11 +173,23 @@ private:
     // 判断某个Item是否已存在(于items中）
     Item is_item_exist(const Item &i);
 
+    // 判断某个Symbol是否已存在（于symbols中）
+    bool is_symbol_exsit(const Symbol &);
+
     // string + int
     string string_concat_int(const string &head, int i);
 
     // string.split(delim)
     vector<string> string_split(const string &s, char delim);
+
+    // 从YaccFront转换到YaccManger
+    void convert_from_front_to_manager(char *);
+
+	// 打印ItemLine
+	void print_item_line(const ItemLine &il);
+
+	// 打印Item
+	void print_item(const Item &item);
 };
 ```
 
