@@ -719,7 +719,6 @@ void YaccManager::convert_from_front_to_manager(char *filename)
         // 遍历production的右部，找寻非终结符，并同时将其加至right
         if (cr.size() == 0) {
             // epsilon，直接留空
-            // right.push_back(Symbol("epsilon", 0));
         } else {
             for (size_t ri = 0; ri < cr.size(); ++ri) {
                 Symbol maybe_new(cr.at(ri), 1); // 先假设为终结符
@@ -747,44 +746,53 @@ void YaccManager::generate_code()
 	streambuf *cout_buf = cout.rdbuf();
 	streambuf *file_buf = of.rdbuf();
 	cout.rdbuf(file_buf);
-	
+
 	cout << "int main() \n" <<
 		"{\n";
-	
+	cout << "map<int,string> map_token_id;\n";
+	string code_token_id_name_map = "";
+	code_token_id_name_map += ""
+		"ifstream in;\n"
+		"in.open(\"token_list.txt\");\n"
+		"int idx = 0;\n"
+		"string token_name;\n"
+		"bool is_token, is_white, is_address;\n"
+		"while(!in.eof()) {\n"
+		"	in >> token_name;\n"
+		"	if(token_name == \"\") {\n"
+		"		break;\n"
+		"	}\n"
+		"	in >> is_token >> is_white >> is_address;\n"
+		"	map_token_id.insert(make_pair(idx, token_name));\n"
+		"	token_name.clear();\n"
+		"	idx++;\n"
+		"}\n"
+		"in.close();\n";
+	cout << code_token_id_name_map;
+
 	cout << "vector<map<string, string>> action(" << action.size() << ");\n";
- 	cout << "map<string, string> actionItem;\n";
- 	for (size_t i = 0; i < action.size(); i++) {
- 		//if (!action.at(i).empty()) {
- 			map<string, string> ca = action.at(i);
- 			//cout << "map<string, string> actionItem;\n";
- 			// cout << "action.push_back(actionItem);\n";
- 			map<string, string>::iterator it = ca.begin();
- 			for (; it != ca.end(); ++it) {
- 				cout << "action.at(" << i << ")[\"" << it->first << "\"] = \"" << it->second << "\";" << endl;
- 			}
- 		//}
- 	}
- 	cout << "vector<map<string, int>> goto_table(" << goto_table.size() << ");\n";
- 	cout << "map<string, int> gotoItem;\n";
- 	for (size_t i = 0; i < goto_table.size(); ++i) {
- 		//if (!goto_table.at(i).empty()) {
- 			map<string, int> line = goto_table.at(i);
- 			//cout << "map<string, int> gotoItem;\n";
- 			// cout << "goto_table.push_back(gotoItem);\n";
- 			map<string, int>::iterator it = line.begin();
- 			for (; it != line.end(); ++it) {
-				if (!is_symbol_exsit(Symbol(it->first, 1))) {
-					cout << "goto_table.at(" << i << ")[\"" << it->first << "\"] = " << it->second << ";" << endl;
-				}
- 			}
- 		//}
- 	}
-	
+	for (size_t i = 0; i < action.size(); i++) {
+		map<string, string> ca = action.at(i);
+		map<string, string>::iterator it = ca.begin();
+		for (; it != ca.end(); ++it) {
+			cout << "action.at(" << i << ")[\"" << it->first << "\"] = \"" << it->second << "\";" << endl;
+		}
+	}
+
+	cout << "vector<map<string, int>> goto_table(" << goto_table.size() << ");\n";
+	for (unsigned int i = 0; i < goto_table.size(); ++i) {
+		map<string, int> line = goto_table.at(i);
+		map<string, int>::iterator it = line.begin();
+		for (; it != line.end(); ++it) {
+			if (!is_symbol_exsit(Symbol(it->first, 1))) {
+				cout << "goto_table.at(" << i << ")[\"" << it->first << "\"] = " << it->second << ";" << endl;
+			}
+		}
+	}
+
 	// production left and right
 	stringstream output1, output2;
-	vector<string> production_left;
 	output1 << "vector<string> production_left;\n";
-	vector<int> production_right_symbol_nums;
 	output2 << "vector<int> production_right_symbol_nums;\n";
 	// 遍历productions，保存相应值到vector中
 	for (size_t i = 0; i < productions.size(); ++i) {
@@ -794,82 +802,102 @@ void YaccManager::generate_code()
 	}
 	cout << output1.str() << output2.str();
 
- 	string code = "";
- 	code = code +
- 		/* token序列文件的读入流 */
- 		"ifstream dotTknFile;\n"
- 		"dotTknFile.open(\"token.tkn\", ios::in);\n"
- 		"\n"
- 		/* PDA的相关结构和初始化 */
- 		"vector<string> symbolStack;\n"
- 		"symbolStack.push_back(\"$\");\n"
- 		"vector<int > stateStack;\n"
- 		"stateStack.push_back(0);\n"
- 		"\n"
- 		/* 用于解析.tkn文件的一些cstring, 包括读头 */
- 		"int buffersize = 512;\n"
- 		"char *tmpCstr = new char[buffersize];\n"
- 		"char *readPointer = new char[buffersize];\n"
- 		"\n"
- 		/* 开始读入.tkn文件, 按照.tkn定义,读头应该是每行的第二个元素 */
- 		"dotTknFile.getline(tmpCstr, buffersize);\n"
- 		"char *splitChar = \" \"; \n"
- 		"readPointer = strtok(tmpCstr, splitChar);\n"
- 		"readPointer = strtok(NULL, splitChar);\n"
- 		"\n"
- 		/* 具体的自动机过程 */
- 		"while(strcmp(tmpCstr, \"$\") != 0 || !symbolStack.empty()) {\n"
- 		"	int currentState = stateStack.at(stateStack.size() - 1);	\n"
- 		/* goto操作 */
- 		/*"	if(goto_table.at(currentState)[readPointer] != NULL) {\n"
- 		"		stateStack.push_back(goto_table.at(currentState)[readPointer][readPointer]);\n"
- 		"	}\n"*/
- 		/* action操作 */
- 		"if (action.at(currentState)[readPointer] != \"\") {\n"
- 		/* 得到action的sn或rn的n(int) */
- 		"		stringstream ss;\n"
- 		"		string actionStr;\n"
- 		"		int production_num;\n"
- 		"		for (int i = 1; i < action.at(currentState)[readPointer].size(); ++i) {\n"
- 		"			actionStr += action.at(currentState)[readPointer][i];\n"
- 		"		}\n"
- 		"		int actionNum;\n"
- 		"		ss << actionStr;\n"
- 		"		ss >> actionNum;\n"
- 		/* 对于sn的移入操作,即状态转换,符号进栈,读头前进 */
- 		"		if(action.at(currentState)[readPointer][0] == 's') {\n"
- 		"			stateStack.push_back(actionNum);\n"
- 		"			symbolStack.push_back(readPointer);\n"
- 		"			dotTknFile.getline(tmpCstr, buffersize);\n"
- 		"			readPointer = strtok(tmpCstr, splitChar);\n"
- 		"			readPointer = strtok(NULL, splitChar);\n"
- 		"		}\n"
- 		/* 对于rn的规约操作,即状态出栈,符号出栈,产生式左部进栈 */
- 		"		else if (action.at(currentState)[readPointer][0] == 'r') {\n"
- 		"			for (int i = 0; i < production_right_symbol_nums[actionNum]; ++i) {\n"
- 		"				symbolStack.pop_back();\n"
- 		"				stateStack.pop_back();\n"
- 		"			}\n"
- 		"			symbolStack.push_back(production_left[actionNum]);\n"
-		"			stateStack.push_back(goto_table.at(stateStack.at(stateStack.size() - 1))[symbolStack.at(symbolStack.size() - 1)]);\n"
- 		"		}\n"
- 		/* accept */
- 		"		else if (action.at(currentState)[readPointer][0] == 'a') {\n"
- 		"			cout << \"accept\" << endl;\n"
- 		"			return 1;\n"
- 		"		}\n"
- 		/* 不是上面的情况则出错 */
- 		"		else {\n"
- 		"			cout << \"error\" << endl;\n"
- 		"			return -1;\n"
- 		"		}\n"
- 		"	}\n"
- 		/* 不是上面的情况则出错 */
- 		"	else {\n"
- 		"		cout << \"error\" << endl;\n"
- 		"		return -1;\n"
- 		"	}\n"
- 		"}\n";
+	string code = "";
+	code = code +
+		/* token序列文件的读入流 */
+		"ifstream dotTknFile;\n"
+		"ofstream reductionSequence;\n"
+		"dotTknFile.open(\"token_sequence.tkn\", ios::in);\n"
+		"reductionSequence.open(\"reduction_sequence.txt\", ios::out);\n"
+		"\n"
+		/* PDA的相关结构和初始化 */
+		"vector<string> symbolStack;\n"
+		"symbolStack.push_back(\"$\");\n"
+		"vector<int > stateStack;\n"
+		"stateStack.push_back(0);\n"
+		"\n"
+		/* 用于解析.tkn文件的一些cstring, 包括读头 */
+		"int buffersize = 512;\n"
+		"char *tmpCstr = new char[buffersize];\n"
+		"char *readPointerCstr = new char[buffersize];\n"
+		"string readPointer;\n"
+		"\n"
+		/* 开始读入.tkn文件, 按照.tkn定义,读头应该是每行的第二个元素 */
+		"dotTknFile.getline(tmpCstr, buffersize);\n"
+		"char *splitChar = \" \"; \n"
+		"readPointerCstr = strtok(tmpCstr, splitChar);\n"
+		"readPointerCstr = strtok(NULL, splitChar);\n"
+
+
+		"\n"
+		/* 具体的自动机过程 */
+		"while(strcmp(readPointerCstr, \"$\") != 0 || !symbolStack.empty()) {\n"
+		"	if (strcmp(readPointerCstr, \"$\") != 0) {\n"
+		"		stringstream strstm;\n"
+		"		strstm << readPointerCstr;\n"
+		"		int tknnum = 0;\n"
+		"		strstm >> tknnum;\n"
+		"		readPointer = map_token_id[tknnum];\n"
+		"	}\n"
+		"	else readPointer = \"$\";\n"
+		"	int currentState = stateStack.at(stateStack.size() - 1);	\n"
+		
+		/* action操作 */
+		"if (action.at(currentState)[readPointer] != \"\") {\n"
+		/* 得到action的sn或rn的n(int) */
+		"		stringstream ss;\n"
+		"		string actionStr;\n"
+		"		int production_num;\n"
+		"		for (int i = 1; i < action.at(currentState)[readPointer].size(); ++i) {\n"
+		"			actionStr += action.at(currentState)[readPointer][i];\n"
+		"		}\n"
+		"		int actionNum;\n"
+		"		ss << actionStr;\n"
+		"		ss >> actionNum;\n"
+		/* 对于sn的移入操作,即状态转换,符号进栈,读头前进 */
+		"		if(action.at(currentState)[readPointer][0] == 's') {\n"
+		"			stateStack.push_back(actionNum);\n"
+		"			symbolStack.push_back(readPointer);\n"
+		"			dotTknFile.getline(tmpCstr, buffersize);\n"
+		"			readPointerCstr = strtok(tmpCstr, splitChar);\n"
+		"			readPointerCstr = strtok(NULL, splitChar);\n"
+		"		}\n"
+		/* 对于rn的规约操作,即状态出栈,符号出栈,产生式左部进栈 */
+		"		else if (action.at(currentState)[readPointer][0] == 'r') {\n"
+		"			reductionSequence << \"r\"<< actionStr << \":\t\";\n"
+		"			vector<string> itembuffer;\n"
+		"			for (int i = 0; i < production_right_symbol_nums[actionNum]; ++i) {\n"
+		"				itembuffer.push_back(symbolStack.back());\n"
+		"				symbolStack.pop_back();\n"
+		"				stateStack.pop_back();\n"
+		"			}\n"
+		"			int i = itembuffer.size() - 1;\n"
+		"			for (i; i >= 0; --i) {\n"
+		"			reductionSequence << itembuffer.at(i) << \" \";\n"
+		"			}\n"
+		"			reductionSequence << \" -> \";\n"
+		"			reductionSequence << production_left[actionNum];\n"
+		"			reductionSequence << endl;\n"
+		"			symbolStack.push_back(production_left[actionNum]);\n"
+		"			stateStack.push_back(goto_table.at(stateStack.back())[symbolStack.back()]);\n"
+		"		}\n"
+		/* accept */
+		"		else if (action.at(currentState)[readPointer][0] == 'a') {\n"
+		"			reductionSequence << \"accept\" << endl;\n"
+		"			return 1;\n"
+		"		}\n"
+		/* 不是上面的情况则出错 */
+		"		else {\n"
+		"			reductionSequence << \"error\" << endl;\n"
+		"			return -1;\n"
+		"		}\n"
+		"	}\n"
+		/* 不是上面的情况则出错 */
+		"	else {\n"
+		"		reductionSequence << \"error\" << endl;\n"
+		"		return -1;\n"
+		"	}\n"
+		"}\n";
  	cout << code;
 
 	cout << "}";
