@@ -742,18 +742,21 @@ void YaccManager::convert_from_front_to_manager(char *filename)
 
 void YaccManager::generate_code()
 {
-	ofstream of("out.cpp", ios::app);
+	ofstream of("syntax_analyzer.cpp", ios::app);
 	streambuf *cout_buf = cout.rdbuf();
 	streambuf *file_buf = of.rdbuf();
 	cout.rdbuf(file_buf);
-
+	
 	cout << "int main() \n" <<
 		"{\n";
+	
 	cout << "map<int,string> map_token_id;\n";
+
 	string code_token_id_name_map = "";
+
 	code_token_id_name_map += ""
 		"ifstream in;\n"
-		"in.open(\"token_list.txt\");\n"
+		"in.open(\"token_list.lst\");\n"
 		"int idx = 0;\n"
 		"string token_name;\n"
 		"bool is_token, is_white, is_address;\n"
@@ -770,7 +773,8 @@ void YaccManager::generate_code()
 		"in.close();\n";
 	cout << code_token_id_name_map;
 
-	cout << "vector<map<string, string>> action(" << action.size() << ");\n";
+	cout << "vector<map<string, string>> action(1000);\n";
+	cout << "map<string, string> actionItem;\n";
 	for (size_t i = 0; i < action.size(); i++) {
 		map<string, string> ca = action.at(i);
 		map<string, string>::iterator it = ca.begin();
@@ -778,8 +782,8 @@ void YaccManager::generate_code()
 			cout << "action.at(" << i << ")[\"" << it->first << "\"] = \"" << it->second << "\";" << endl;
 		}
 	}
-
-	cout << "vector<map<string, int>> goto_table(" << goto_table.size() << ");\n";
+	cout << "vector<map<string, int>> goto_table(1000);\n";
+	cout << "map<string, int> gotoItem;\n";
 	for (unsigned int i = 0; i < goto_table.size(); ++i) {
 		map<string, int> line = goto_table.at(i);
 		map<string, int>::iterator it = line.begin();
@@ -807,8 +811,8 @@ void YaccManager::generate_code()
 		/* token序列文件的读入流 */
 		"ifstream dotTknFile;\n"
 		"ofstream reductionSequence;\n"
-		"dotTknFile.open(\"token_sequence.tkn\", ios::in);\n"
-		"reductionSequence.open(\"reduction_sequence.txt\", ios::out);\n"
+		"dotTknFile.open(\"token_sequence.seq\", ios::in);\n"
+		"reductionSequence.open(\"reduction_sequence.seq\", ios::out);\n"
 		"\n"
 		/* PDA的相关结构和初始化 */
 		"vector<string> symbolStack;\n"
@@ -828,7 +832,6 @@ void YaccManager::generate_code()
 		"readPointerCstr = strtok(tmpCstr, splitChar);\n"
 		"readPointerCstr = strtok(NULL, splitChar);\n"
 
-
 		"\n"
 		/* 具体的自动机过程 */
 		"while(strcmp(readPointerCstr, \"$\") != 0 || !symbolStack.empty()) {\n"
@@ -841,7 +844,6 @@ void YaccManager::generate_code()
 		"	}\n"
 		"	else readPointer = \"$\";\n"
 		"	int currentState = stateStack.at(stateStack.size() - 1);	\n"
-		
 		/* action操作 */
 		"if (action.at(currentState)[readPointer] != \"\") {\n"
 		/* 得到action的sn或rn的n(int) */

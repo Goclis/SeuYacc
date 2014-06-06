@@ -21,7 +21,7 @@ void YaccFront::readFromDefFile(char* filename)
     char *tmpCstr = new char[BUFFERSIZE];
     string tmpString;
     readDefFile.open(filename, ios::in);
-    outputFile.open("out.cpp", ios::out);
+    outputFile.open("syntax_analyzer.cpp", ios::out);
     readDefFile.getline(tmpCstr, BUFFERSIZE);	//读取第一行，不做处理，默认为%}
     /* 将第一段直接输出到生成的文件 */
     readDefFile.getline(tmpCstr, BUFFERSIZE);
